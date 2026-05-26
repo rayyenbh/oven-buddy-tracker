@@ -14,7 +14,107 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      operations: {
+        Row: {
+          cdc: string | null
+          couleur: string | null
+          created_at: string
+          date_debut: string
+          date_fin: string | null
+          demandeur: string
+          ended_at: string | null
+          essai: string | null
+          heure_debut: string
+          heure_fin: string | null
+          id: string
+          notes: string | null
+          oven_id: string
+          projet: string | null
+          realisateur: string
+          section: string | null
+          specification: string | null
+          status: string
+          type: string | null
+        }
+        Insert: {
+          cdc?: string | null
+          couleur?: string | null
+          created_at?: string
+          date_debut: string
+          date_fin?: string | null
+          demandeur: string
+          ended_at?: string | null
+          essai?: string | null
+          heure_debut: string
+          heure_fin?: string | null
+          id?: string
+          notes?: string | null
+          oven_id: string
+          projet?: string | null
+          realisateur: string
+          section?: string | null
+          specification?: string | null
+          status?: string
+          type?: string | null
+        }
+        Update: {
+          cdc?: string | null
+          couleur?: string | null
+          created_at?: string
+          date_debut?: string
+          date_fin?: string | null
+          demandeur?: string
+          ended_at?: string | null
+          essai?: string | null
+          heure_debut?: string
+          heure_fin?: string | null
+          id?: string
+          notes?: string | null
+          oven_id?: string
+          projet?: string | null
+          realisateur?: string
+          section?: string | null
+          specification?: string | null
+          status?: string
+          type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operations_oven_id_fkey"
+            columns: ["oven_id"]
+            isOneToOne: false
+            referencedRelation: "ovens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ovens: {
+        Row: {
+          created_at: string
+          id: string
+          internal_number: string
+          position: number
+          serial_number: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          internal_number: string
+          position: number
+          serial_number: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          internal_number?: string
+          position?: number
+          serial_number?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
