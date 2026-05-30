@@ -93,6 +93,8 @@ function AdminPage() {
         .eq("status", "active");
       if (cErr) throw cErr;
       if ((count ?? 0) > 0) throw new Error("Impossible : une opération est en cours sur ce four");
+      const { error: opErr } = await supabase.from("operations").delete().eq("oven_id", o.id);
+      if (opErr) throw opErr;
       const { error } = await supabase.from("ovens").delete().eq("id", o.id);
       if (error) throw error;
     },
