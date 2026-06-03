@@ -79,9 +79,9 @@ function Dashboard() {
       <div className="mb-8 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Vue d'ensemble</p>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Tableau des fours</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Tableau des étuves</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Disponibilité en temps réel · {counts.total} fours de traitement thermique
+            Disponibilité en temps réel · {counts.total} étuves de traitement thermique
           </p>
         </div>
         <div className="mt-2 flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 sm:mt-0">
@@ -96,7 +96,7 @@ function Dashboard() {
       {/* KPI cards */}
       <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <KpiCard
-          label="Total fours"
+          label="Total étuves"
           value={counts.total}
           icon={<IconFours />}
           accent="primary"
@@ -107,14 +107,14 @@ function Dashboard() {
           value={counts.free}
           icon={<IconFree />}
           accent="success"
-          sub="prêts à l'emploi"
+          sub="prêtes à l'emploi"
         />
         <KpiCard
           label="En opération"
           value={counts.busy}
           icon={<IconBusy />}
           accent="busy"
-          sub="actifs maintenant"
+          sub="actives maintenant"
         />
         <KpiCard
           label="Taux d'utilisation"
@@ -150,7 +150,7 @@ function Dashboard() {
                   : "text-muted-foreground hover:text-foreground hover:bg-secondary"
               }`}
             >
-              {f === "all" ? `Tous (${counts.total})` : f === "free" ? `Libres (${counts.free})` : `En cours (${counts.busy})`}
+              {f === "all" ? `Toutes (${counts.total})` : f === "free" ? `Libres (${counts.free})` : `En cours (${counts.busy})`}
             </button>
           ))}
         </div>
@@ -184,7 +184,7 @@ function Dashboard() {
               <svg className="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
                 <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35" strokeLinecap="round"/>
               </svg>
-              <p className="text-sm text-muted-foreground">Aucun four ne correspond à cette recherche</p>
+              <p className="text-sm text-muted-foreground">Aucune étuve ne correspond à cette recherche</p>
             </div>
           )}
         </div>

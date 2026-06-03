@@ -77,7 +77,7 @@ export function OvenCard({ oven, onClick }: { oven: OvenWithActive; onClick: () 
             <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <circle cx="12" cy="12" r="9"/><path d="M12 8v8m-4-4h8" strokeLinecap="round"/>
             </svg>
-            Démarrer une opération
+            Étuve disponible
           </div>
         )}
       </div>
