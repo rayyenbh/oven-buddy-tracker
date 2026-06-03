@@ -82,6 +82,44 @@
   --busy-foreground: oklch(0.1 0.015 250);
 }
 
+/* Light mode overrides */
+html.light-mode {
+  --background: oklch(0.97 0 0);
+  --foreground: oklch(0.15 0.02 250);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.15 0.02 250);
+
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.15 0.02 250);
+
+  --primary: oklch(0.38 0.16 210);
+  --primary-foreground: oklch(1 0 0);
+
+  --secondary: oklch(0.93 0 0);
+  --secondary-foreground: oklch(0.25 0.02 250);
+
+  --muted: oklch(0.93 0 0);
+  --muted-foreground: oklch(0.48 0.01 250);
+
+  --accent: oklch(0.38 0.16 210);
+  --accent-foreground: oklch(1 0 0);
+
+  --destructive: oklch(0.55 0.24 27);
+  --destructive-foreground: oklch(1 0 0);
+
+  --border: oklch(0.87 0 0);
+  --input: oklch(0.9 0 0);
+  --ring: oklch(0.38 0.16 210);
+
+  --success: oklch(0.48 0.19 155);
+  --success-foreground: oklch(1 0 0);
+  --warning: oklch(0.55 0.18 75);
+  --warning-foreground: oklch(1 0 0);
+  --busy: oklch(0.52 0.22 38);
+  --busy-foreground: oklch(1 0 0);
+}
+
 @layer base {
   * { border-color: var(--color-border); }
   html, body { height: 100%; }
@@ -90,6 +128,18 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+  }
+
+  *, *::before, *::after {
+    transition-property: background-color, border-color, color, box-shadow;
+    transition-duration: 180ms;
+    transition-timing-function: ease;
+  }
+
+  /* disable transitions on interactive elements to keep them snappy */
+  button, a, input, textarea, select {
+    transition-property: background-color, border-color, color, box-shadow, transform, opacity;
+    transition-duration: 120ms;
   }
   .font-mono { font-family: var(--font-mono); }
 }
@@ -100,7 +150,7 @@
   .glow-busy    { box-shadow: 0 0 20px oklch(0.72 0.2 38 / 0.3); }
 
   .glass {
-    background: oklch(0.14 0.018 250 / 0.85);
+    background: color-mix(in oklch, var(--color-card) 88%, transparent);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
   }
@@ -116,9 +166,9 @@
   .animate-shimmer {
     background: linear-gradient(
       90deg,
-      oklch(0.14 0.018 250) 0%,
-      oklch(0.2 0.025 250) 50%,
-      oklch(0.14 0.018 250) 100%
+      var(--color-card) 0%,
+      var(--color-secondary) 50%,
+      var(--color-card) 100%
     );
     background-size: 200% 100%;
     animation: shimmer 1.6s ease-in-out infinite;

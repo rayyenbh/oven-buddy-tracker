@@ -8,6 +8,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider, useTheme } from "@/lib/theme";
 
 import appCss from "../styles.css?url";
 
@@ -122,6 +123,7 @@ function Header() {
         </Link>
 
         <nav className="flex items-center gap-1">
+          <ThemeToggle />
           <NavLink to="/" exact label="Tableau" icon={
             <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <rect x="3" y="3" width="7" height="7" rx="1.5"/>
@@ -147,6 +149,28 @@ function Header() {
   );
 }
 
+function ThemeToggle() {
+  const { theme, toggle } = useTheme();
+  return (
+    <button
+      onClick={toggle}
+      title={theme === "dark" ? "Passer en mode clair" : "Passer en mode sombre"}
+      className="flex h-9 w-9 items-center justify-center rounded-xl border border-transparent text-muted-foreground transition-all hover:bg-secondary hover:text-foreground"
+    >
+      {theme === "dark" ? (
+        <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="4"/>
+          <path strokeLinecap="round" d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+        </svg>
+      ) : (
+        <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75 9.75 9.75 0 0 1 8.25 6c0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 12c0 5.385 4.365 9.75 9.75 9.75 4.906 0 8.978-3.61 9.75-8.25-.083.001-.165.002-.248.002Z"/>
+        </svg>
+      )}
+    </button>
+  );
+}
+
 function NavLink({ to, label, icon, exact }: { to: string; label: string; icon: React.ReactNode; exact?: boolean }) {
   return (
     <Link
@@ -165,13 +189,15 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen flex flex-col bg-background">
-        <Header />
-        <main className="flex-1">
-          <Outlet />
-        </main>
-      </div>
-      <Toaster position="top-right" richColors />
+      <ThemeProvider>
+        <div className="min-h-screen flex flex-col bg-background">
+          <Header />
+          <main className="flex-1">
+            <Outlet />
+          </main>
+        </div>
+        <Toaster position="top-right" richColors />
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
