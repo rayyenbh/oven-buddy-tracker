@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchOvensWithActive, fetchReservations, createReservation, deleteReservation, addHoursToDateTime } from "@/lib/oven-queries";
 import type { ReservationWithOven } from "@/lib/oven-queries";
@@ -254,10 +254,10 @@ function NewReservationDialog({
     setLastPrefill(prefillDate);
     setDateDebut(prefillDate || todayISO());
   }
-  // Pre-fill demandeur with the connected user the first time
-  if (open && fullName && !demandeur && demandeur === "") {
-    // noop guard — set once
-  }
+  // Pre-fill demandeur with the connected user once when dialog opens
+  useEffect(() => {
+    if (open && fullName && !demandeur) setDemandeur(fullName);
+  }, [open, fullName, demandeur]);
 
   const end = useMemo(() => {
     const h = parseFloat(dureeHeures);
@@ -325,7 +325,7 @@ function NewReservationDialog({
 
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Demandeur <span className="text-busy">*</span></Label>
-            <Input placeholder="Nom du demandeur" value={demandeur || fullName} onChange={(e) => setDemandeur(e.target.value)} maxLength={200} />
+            <Input placeholder="Nom du demandeur" value={demandeur} onChange={(e) => setDemandeur(e.target.value)} maxLength={200} />
           </div>
 
           <div className="space-y-1.5">

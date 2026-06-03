@@ -343,9 +343,9 @@ function HistoryPage() {
                     <td className="px-4 py-3 font-medium">{op.demandeur}</td>
                     <td className="px-4 py-3 font-medium">{op.realisateur}</td>
                     <td className="px-4 py-3 text-muted-foreground">{op.projet ?? <Dash />}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{op.type ?? <Dash />}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{op.section ?? <Dash />}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{op.couleur ?? <Dash />}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{(op as any).cables?.[0]?.type ?? op.type ?? <Dash />}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{(op as any).cables?.[0]?.section ?? op.section ?? <Dash />}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{(op as any).cables?.[0]?.couleur ?? op.couleur ?? <Dash />}</td>
                     <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">{op.date_debut} {op.heure_debut}</td>
                     <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
                       {op.date_fin ? `${op.date_fin} ${op.heure_fin ?? ""}` : <Dash />}
