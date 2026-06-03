@@ -109,7 +109,7 @@ function HistoryPage() {
         <div>
           <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Journal</p>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Historique des opérations</h1>
-          <p className="mt-1 text-sm text-muted-foreground">500 dernières opérations · actives et terminées</p>
+          <p className="mt-1 text-sm text-muted-foreground">500 dernières opérations sur les étuves · actives et terminées</p>
         </div>
         {/* Export buttons */}
         <div className="flex items-center gap-2 shrink-0">
@@ -170,7 +170,7 @@ function HistoryPage() {
               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35" strokeLinecap="round"/>
             </svg>
             <Input
-              placeholder="Four, demandeur, projet…"
+              placeholder="Étuve, demandeur, projet…"
               value={search}
               onChange={(e) => handleFilterChange(() => setSearch(e.target.value))}
               className="pl-9 bg-card border-border"
@@ -288,7 +288,7 @@ function HistoryPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-secondary/50">
-                {["Four", "Statut", "Demandeur", "Réalisateur", "Projet", "Type", "Section", "Couleur", "Début", "Fin"].map(h => (
+                {["Étuve", "Statut", "Demandeur", "Réalisateur", "Projet", "Type", "Section", "Couleur", "Début", "Fin"].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">
                     {h}
                   </th>
@@ -343,9 +343,9 @@ function HistoryPage() {
                     <td className="px-4 py-3 font-medium">{op.demandeur}</td>
                     <td className="px-4 py-3 font-medium">{op.realisateur}</td>
                     <td className="px-4 py-3 text-muted-foreground">{op.projet ?? <Dash />}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{op.type ?? <Dash />}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{op.section ?? <Dash />}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{op.couleur ?? <Dash />}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{(op as any).cables?.[0]?.type ?? op.type ?? <Dash />}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{(op as any).cables?.[0]?.section ?? op.section ?? <Dash />}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{(op as any).cables?.[0]?.couleur ?? op.couleur ?? <Dash />}</td>
                     <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">{op.date_debut} {op.heure_debut}</td>
                     <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
                       {op.date_fin ? `${op.date_fin} ${op.heure_fin ?? ""}` : <Dash />}
