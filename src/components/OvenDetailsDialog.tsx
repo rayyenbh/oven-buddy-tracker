@@ -1,3 +1,4 @@
+import React from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { OvenWithActive } from "@/lib/oven-queries";
@@ -6,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
-  if (!value || value === "—") return null;
+  if (value === null || value === undefined || value === "" || value === "—") return null;
   return (
     <div className="flex items-center justify-between gap-4 py-2.5 border-b border-border/50 last:border-b-0">
       <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground shrink-0">{label}</span>
@@ -16,25 +17,19 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 }
 
 function ElapsedTimer({ startISO }: { startISO: string }) {
-  const [elapsed, setElapsed] = React.useState(() => {
-    const diff = Math.max(0, Date.now() - new Date(startISO).getTime());
-    const h = Math.floor(diff / 3_600_000);
-    const m = Math.floor((diff % 3_600_000) / 60_000);
-    return `${h}h ${m.toString().padStart(2, "0")}m`;
-  });
+  const [elapsed, setElapsed] = React.useState(() => fmt(startISO));
   React.useEffect(() => {
-    const t = setInterval(() => {
-      const diff = Math.max(0, Date.now() - new Date(startISO).getTime());
-      const h = Math.floor(diff / 3_600_000);
-      const m = Math.floor((diff % 3_600_000) / 60_000);
-      setElapsed(`${h}h ${m.toString().padStart(2, "0")}m`);
-    }, 30_000);
+    const t = setInterval(() => setElapsed(fmt(startISO)), 30_000);
     return () => clearInterval(t);
   }, [startISO]);
   return <span className="font-mono font-bold text-busy tabular-nums">{elapsed}</span>;
 }
-
-import React from "react";
+function fmt(startISO: string) {
+  const diff = Math.max(0, Date.now() - new Date(startISO).getTime());
+  const h = Math.floor(diff / 3_600_000);
+  const m = Math.floor((diff % 3_600_000) / 60_000);
+  return `${h}h ${m.toString().padStart(2, "0")}m`;
+}
 
 export function OvenDetailsDialog({
   oven,
@@ -62,7 +57,7 @@ export function OvenDetailsDialog({
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Opération terminée — four libéré");
+      toast.success("Opération terminée — étuve libérée");
       qc.invalidateQueries({ queryKey: ["ovens"] });
       qc.invalidateQueries({ queryKey: ["history"] });
       onOpenChange(false);
@@ -73,10 +68,11 @@ export function OvenDetailsDialog({
   if (!oven || !oven.active) return null;
   const a = oven.active;
   const startISO = `${a.date_debut}T${a.heure_debut}`;
+  const cables = a.cables ?? [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg border-border bg-card">
+      <DialogContent className="max-w-lg border-border bg-card max-h-[90vh] overflow-y-auto">
         <DialogHeader className="pb-0">
           <div className="flex items-center gap-3 flex-wrap">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-busy/15 shrink-0">
@@ -92,7 +88,7 @@ export function OvenDetailsDialog({
               <DialogDescription className="mt-0.5 flex items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-busy/15 px-2 py-0.5 text-xs font-semibold text-busy">
                   <span className="h-1.5 w-1.5 rounded-full bg-busy animate-pulse-dot" />
-                  En opération
+                  Étuve en opération
                 </span>
                 <ElapsedTimer startISO={startISO} />
               </DialogDescription>
@@ -107,18 +103,42 @@ export function OvenDetailsDialog({
           <DetailRow label="CDC" value={a.cdc} />
           <DetailRow label="Essai" value={a.essai} />
           <DetailRow label="Spécification" value={a.specification} />
-          <DetailRow label="Type" value={a.type} />
-          <DetailRow label="Section" value={a.section} />
-          <DetailRow label="Couleur" value={a.couleur} />
+          <DetailRow label="Température" value={a.temperature !== null ? `${a.temperature} °C` : null} />
+          <DetailRow label="Durée prévue" value={a.duree_heures !== null ? `${a.duree_heures} h` : null} />
           <DetailRow label="Début" value={`${a.date_debut} · ${a.heure_debut}`} />
           <DetailRow label="Fin prévue" value={a.date_fin ? `${a.date_fin} · ${a.heure_fin ?? ""}` : null} />
-          {a.notes && (
-            <div className="py-2.5 border-t border-border/50">
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1.5">Notes</p>
-              <p className="text-sm text-foreground">{a.notes}</p>
-            </div>
-          )}
         </div>
+
+        {cables.length > 0 && (
+          <div className="mt-4">
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+              Câbles ({cables.length})
+            </p>
+            <div className="space-y-2">
+              {cables.sort((a, b) => a.position - b.position).map((c) => (
+                <div key={c.id} className="rounded-lg border border-border bg-secondary/20 px-3 py-2">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Câble #{c.position}
+                    </span>
+                  </div>
+                  <div className="mt-1 grid grid-cols-3 gap-2 text-xs">
+                    <div><span className="text-muted-foreground">Type :</span> <span className="font-medium text-foreground">{c.type ?? "—"}</span></div>
+                    <div><span className="text-muted-foreground">Section :</span> <span className="font-medium text-foreground">{c.section ?? "—"}</span></div>
+                    <div><span className="text-muted-foreground">Couleur :</span> <span className="font-medium text-foreground">{c.couleur ?? "—"}</span></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {a.notes && (
+          <div className="mt-3 rounded-xl border border-border/50 bg-secondary/30 px-4 py-3">
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1.5">Notes</p>
+            <p className="text-sm text-foreground">{a.notes}</p>
+          </div>
+        )}
 
         <DialogFooter className="gap-2 pt-2">
           <Button variant="outline" onClick={() => onOpenChange(false)} className="border-border">Fermer</Button>
@@ -127,14 +147,7 @@ export function OvenDetailsDialog({
             disabled={endMut.isPending}
             className="bg-success text-success-foreground hover:bg-success/90"
           >
-            {endMut.isPending ? (
-              <span className="flex items-center gap-2"><svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg> En cours…</span>
-            ) : (
-              <span className="flex items-center gap-2">
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m9 12 2 2 4-4" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                Libérer le four
-              </span>
-            )}
+            {endMut.isPending ? "En cours…" : "Libérer l'étuve"}
           </Button>
         </DialogFooter>
       </DialogContent>
