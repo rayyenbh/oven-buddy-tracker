@@ -183,6 +183,59 @@ export type Database = {
         }
         Relationships: []
       }
+      reservations: {
+        Row: {
+          created_at: string
+          date_debut: string
+          date_fin: string
+          demandeur: string
+          duree_heures: number | null
+          heure_debut: string
+          heure_fin: string
+          id: string
+          notes: string | null
+          oven_id: string
+          projet: string | null
+          temperature: number | null
+        }
+        Insert: {
+          created_at?: string
+          date_debut: string
+          date_fin: string
+          demandeur: string
+          duree_heures?: number | null
+          heure_debut: string
+          heure_fin: string
+          id?: string
+          notes?: string | null
+          oven_id: string
+          projet?: string | null
+          temperature?: number | null
+        }
+        Update: {
+          created_at?: string
+          date_debut?: string
+          date_fin?: string
+          demandeur?: string
+          duree_heures?: number | null
+          heure_debut?: string
+          heure_fin?: string
+          id?: string
+          notes?: string | null
+          oven_id?: string
+          projet?: string | null
+          temperature?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservations_oven_id_fkey"
+            columns: ["oven_id"]
+            isOneToOne: false
+            referencedRelation: "ovens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
