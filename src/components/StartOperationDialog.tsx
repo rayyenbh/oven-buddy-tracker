@@ -264,20 +264,59 @@ export function StartOperationDialog({
 
           {/* Planning */}
           <Section title="Planning" color="success">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="Date début" required type="date" value={dateDebut} onChange={setDateDebut} />
               <Field label="Heure début" required type="time" value={heureDebut} onChange={setHeureDebut} />
-              <Field label="Durée (heures)" required type="number" step="0.5" value={dureeHeures} onChange={setDureeHeures} placeholder="ex: 2.5" />
             </div>
+
+            <div className="mt-4">
+              <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Définir la fin par
+              </Label>
+              <div className="mt-1.5 inline-flex rounded-lg border border-border bg-secondary/40 p-0.5 gap-0.5">
+                {(["duree", "manuel"] as const).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setEndMode(m)}
+                    className={`rounded-md px-3 py-1 text-xs font-medium transition-all ${
+                      endMode === m
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {m === "duree" ? "Durée (heures)" : "Date & heure de fin"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {endMode === "duree" ? (
+              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Field
+                  label="Durée (heures)" required type="number" step="0.5"
+                  value={dureeHeures} onChange={setDureeHeures} placeholder="ex: 2.5"
+                />
+              </div>
+            ) : (
+              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Field label="Date fin" required type="date" value={dateFinManuel} onChange={setDateFinManuel} />
+                <Field label="Heure fin" required type="time" value={heureFinManuel} onChange={setHeureFinManuel} />
+              </div>
+            )}
+
             {computedEnd && (
               <div className="mt-3 rounded-lg border border-success/30 bg-success/10 px-3 py-2.5">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-success">Fin calculée automatiquement</p>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-success">
+                  {endMode === "duree" ? "Fin calculée automatiquement" : "Fin enregistrée"}
+                </p>
                 <p className="mt-0.5 font-mono text-sm font-medium text-foreground">
                   {computedEnd.date} · {computedEnd.time}
                 </p>
               </div>
             )}
           </Section>
+
 
           {/* Notes */}
           <div className="space-y-1.5">
