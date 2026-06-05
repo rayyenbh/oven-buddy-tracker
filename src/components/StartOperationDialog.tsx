@@ -42,7 +42,10 @@ export function StartOperationDialog({
   const [temperature, setTemperature] = useState("");
   const [dateDebut, setDateDebut] = useState(todayISO());
   const [heureDebut, setHeureDebut] = useState(nowHM());
+  const [endMode, setEndMode] = useState<"duree" | "manuel">("duree");
   const [dureeHeures, setDureeHeures] = useState("");
+  const [dateFinManuel, setDateFinManuel] = useState("");
+  const [heureFinManuel, setHeureFinManuel] = useState("");
   const [notes, setNotes] = useState("");
   const [cables, setCables] = useState<CableInput[]>([emptyCable()]);
 
@@ -52,16 +55,26 @@ export function StartOperationDialog({
   }, [open, fullName, demandeur]);
 
   const computedEnd = useMemo(() => {
+    if (endMode === "manuel") {
+      if (!dateFinManuel || !heureFinManuel) return null;
+      // sanity check: end > start
+      const start = new Date(`${dateDebut}T${heureDebut}:00`);
+      const end = new Date(`${dateFinManuel}T${heureFinManuel}:00`);
+      if (!(end.getTime() > start.getTime())) return null;
+      return { date: dateFinManuel, time: heureFinManuel };
+    }
     const h = parseFloat(dureeHeures);
     if (!dateDebut || !heureDebut || !dureeHeures || isNaN(h) || h <= 0) return null;
     return addHoursToDateTime(dateDebut, heureDebut, h);
-  }, [dateDebut, heureDebut, dureeHeures]);
+  }, [endMode, dateDebut, heureDebut, dureeHeures, dateFinManuel, heureFinManuel]);
 
   const reset = () => {
     setDemandeur(fullName || "");
     setRealisateur(""); setProjet(""); setCdc(""); setEssai("");
     setSpecification(""); setTemperature("");
-    setDateDebut(todayISO()); setHeureDebut(nowHM()); setDureeHeures("");
+    setDateDebut(todayISO()); setHeureDebut(nowHM());
+    setEndMode("duree"); setDureeHeures("");
+    setDateFinManuel(""); setHeureFinManuel("");
     setNotes(""); setCables([emptyCable()]);
   };
 
