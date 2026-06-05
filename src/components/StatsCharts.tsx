@@ -1,8 +1,8 @@
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  LineChart, Line, CartesianGrid, PieChart, Pie, Cell,
+  CartesianGrid, PieChart, Pie, Cell,
 } from "recharts";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, Info } from "lucide-react";
 
 const CHART_COLORS = [
   "oklch(0.72 0.18 200)",
