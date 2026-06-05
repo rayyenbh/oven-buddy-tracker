@@ -114,6 +114,9 @@ export function StartOperationDialog({
       const err = validate();
       if (err) throw new Error(err);
       const end = computedEnd!;
+      const startMs = new Date(`${dateDebut}T${heureDebut}:00`).getTime();
+      const endMs = new Date(`${end.date}T${end.time}:00`).getTime();
+      const durationHours = endMode === "duree" ? parseFloat(dureeHeures) : (endMs - startMs) / 3_600_000;
       const { data: op, error: oErr } = await supabase.from("operations").insert({
         oven_id: oven!.id,
         demandeur: demandeur.trim(),
@@ -123,7 +126,7 @@ export function StartOperationDialog({
         essai: essai.trim(),
         specification: specification.trim(),
         temperature: parseFloat(temperature),
-        duree_heures: parseFloat(dureeHeures),
+        duree_heures: Math.round(durationHours * 100) / 100,
         date_debut: dateDebut,
         heure_debut: heureDebut,
         date_fin: end.date,
