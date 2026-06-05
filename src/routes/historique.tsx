@@ -350,6 +350,32 @@ function HistoryPage() {
                     <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
                       {op.date_fin ? `${op.date_fin} ${op.heure_fin ?? ""}` : <Dash />}
                     </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="sm" variant="ghost"
+                          className="h-7 gap-1 px-2 text-xs"
+                          title="Télécharger en CSV"
+                          onClick={() => {
+                            const slug = `${op.oven?.internal_number ?? "op"}_${op.date_debut}`.replace(/[^\w-]+/g, "_");
+                            exportCSV([op as any], `operation_${slug}.csv`);
+                          }}
+                        >
+                          <Download className="h-3.5 w-3.5" /> CSV
+                        </Button>
+                        <Button
+                          size="sm" variant="ghost"
+                          className="h-7 gap-1 px-2 text-xs"
+                          title="Télécharger en PDF"
+                          onClick={() => {
+                            const slug = `${op.oven?.internal_number ?? "op"}_${op.date_debut}`.replace(/[^\w-]+/g, "_");
+                            exportPDF([op as any], `operation_${slug}.pdf`);
+                          }}
+                        >
+                          <FileText className="h-3.5 w-3.5" /> PDF
+                        </Button>
+                      </div>
+                    </td>
                   </tr>
                 ))
               )}
