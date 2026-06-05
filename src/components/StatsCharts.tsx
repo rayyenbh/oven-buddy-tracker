@@ -163,7 +163,11 @@ export function StatsCharts({ isLoading, statusData, perOvenData, radialData }: 
           )}
         </ChartCard>
 
-        <ChartCard title="Utilisation relative" subtitle="Classement des 8 premiers fours">
+        <ChartCard
+          title="Utilisation relative"
+          subtitle="Classement des 8 premières étuves"
+          info="Top 8 des étuves, exprimé en pourcentage du nombre d'opérations de l'étuve la plus utilisée (100% = leader)."
+        >
           {radialData.length === 0 ? <EmptyChart /> : (
             <div className="space-y-2 pt-1">
               {radialData.map(d => (
