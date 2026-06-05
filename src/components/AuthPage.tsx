@@ -10,6 +10,7 @@ export function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [role, setRole] = useState<"admin" | "technicien">("technicien");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
