@@ -124,18 +124,7 @@ function StatsPage() {
       .map(d => ({ ...d, heures: Math.round(d.heures * 10) / 10 }));
   }, [filtered]);
 
-  const timelineData = useMemo(() => {
-    const map = new Map<string, { label: string; ops: number; heures: number }>();
-    filtered.forEach(o => {
-      const date = new Date(o.date_debut);
-      const key  = groupBy === "week" ? isoWeek(date) : isoMonth(date);
-      if (!map.has(key)) map.set(key, { label: key, ops: 0, heures: 0 });
-      const e = map.get(key)!;
-      e.ops++;
-      e.heures += durationHours(o);
-    });
-    return Array.from(map.values()).map(d => ({ ...d, heures: Math.round(d.heures * 10) / 10 }));
-  }, [filtered, groupBy]);
+
 
   const statusData = useMemo(() => [
     { name: "Terminées", value: filtered.filter(o => o.status === "completed").length, color: CHART_COLORS[1] },
