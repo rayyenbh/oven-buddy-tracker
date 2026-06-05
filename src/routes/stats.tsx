@@ -324,9 +324,10 @@ function StatsPage() {
 
 // ── Sub-components ──
 
-function KpiCard({ label, value, sub, accent, icon, children }: {
+function KpiCard({ label, value, sub, accent, icon, info, children }: {
   label: string; value: string | number; sub: string;
-  accent: "primary" | "success" | "warning" | "busy"; icon: React.ReactNode; children?: React.ReactNode;
+  accent: "primary" | "success" | "warning" | "busy"; icon: React.ReactNode;
+  info?: string; children?: React.ReactNode;
 }) {
   const cls = {
     primary: { val: "text-primary", bg: "bg-primary/10 text-primary" },
@@ -338,7 +339,19 @@ function KpiCard({ label, value, sub, accent, icon, children }: {
     <div className="rounded-xl border border-border bg-card p-4 flex flex-col gap-3">
       <div className="flex items-start justify-between">
         <div className="min-w-0">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
+          <div className="flex items-center gap-1.5">
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
+            {info && (
+              <button
+                type="button"
+                title={info}
+                aria-label={`Info: ${info}`}
+                className="text-muted-foreground/60 hover:text-foreground transition-colors"
+              >
+                <Info className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
           <p className={`mt-1 text-2xl font-bold font-mono tracking-tight ${cls.val}`}>{value}</p>
           <p className="mt-0.5 text-xs text-muted-foreground">{sub}</p>
         </div>
