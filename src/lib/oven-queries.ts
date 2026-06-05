@@ -79,6 +79,16 @@ export async function fetchHistory(): Promise<(Operation & { oven: Oven })[]> {
   return result;
 }
 
+export async function fetchHistoryChambres(): Promise<(Operation & { oven: Oven })[]> {
+  const { data, error } = await (supabase as any)
+    .from("operations_chambres")
+    .select("*, oven:chambres_climatiques(*)")
+    .order("created_at", { ascending: false })
+    .limit(500);
+  if (error) throw error;
+  return (data ?? []) as any;
+}
+
 export async function fetchReservations(): Promise<ReservationWithOven[]> {
   if (!isOnline()) {
     return getCachedData<ReservationWithOven>("reservations");
@@ -158,6 +168,15 @@ export async function fetchStatsChambres(): Promise<StatsOperation[]> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+
+export async function fetchStatsEtuves(): Promise<StatsOperation[]> {
+  const { data, error } = await supabase
+    .from("operations")
+    .select("id, oven_id, date_debut, heure_debut, date_fin, heure_fin, status, ended_at, created_at, oven:ovens(id, internal_number, serial_number)")
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as any;
+}
 
 export async function fetchStats(): Promise<StatsOperation[]> {
   const { data, error } = await supabase

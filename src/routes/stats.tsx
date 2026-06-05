@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState, useEffect, lazy, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { fetchStats, fetchOvensWithActive, fetchHistory } from "@/lib/oven-queries";
+import { fetchStats, fetchStatsChambres, fetchOvensWithActive, fetchHistory, fetchHistoryChambres, fetchChambresWithActive } from "@/lib/oven-queries";
 import type { StatsOperation } from "@/lib/oven-queries";
 import { exportCSV, exportPDF } from "@/lib/export";
 import { Download, FileText, TrendingUp, Clock, Activity, Zap, Filter } from "lucide-react";
@@ -22,6 +22,7 @@ function useIsClient() {
   return client;
 }
 
+type Source = "etuves" | "chambres";
 type Period = "7j" | "30j" | "90j" | "365j" | "tout";
 
 const PERIOD_DAYS: Record<Period, number | null> = {
@@ -72,24 +73,35 @@ function isoMonth(date: Date): string {
 
 function StatsPage() {
   const isClient = useIsClient();
+  const [source, setSource] = useState<Source>("etuves");
 
-  const { data: ops = [], isLoading } = useQuery({
+  const { data: opsEtuves = [], isLoading: loadingEtuves } = useQuery({
     queryKey: ["stats"],
     queryFn: fetchStats,
     refetchInterval: 120_000,
   });
-  const { data: ovens = [] } = useQuery({
-    queryKey: ["ovens"],
-    queryFn: fetchOvensWithActive,
+  const { data: opsChambres = [], isLoading: loadingChambres } = useQuery({
+    queryKey: ["stats-chambres"],
+    queryFn: fetchStatsChambres,
+    refetchInterval: 120_000,
   });
-  const { data: historyData = [] } = useQuery({
-    queryKey: ["history"],
-    queryFn: fetchHistory,
-  });
+  const { data: ovensEtuves = [] } = useQuery({ queryKey: ["ovens"], queryFn: fetchOvensWithActive });
+  const { data: ovensChambres = [] } = useQuery({ queryKey: ["chambres"], queryFn: fetchChambresWithActive });
+  const { data: historyEtuves = [] } = useQuery({ queryKey: ["history"], queryFn: fetchHistory });
+  const { data: historyChambres = [] } = useQuery({ queryKey: ["history-chambres"], queryFn: fetchHistoryChambres });
+
+  const ops         = source === "etuves" ? opsEtuves     : opsChambres;
+  const ovens       = source === "etuves" ? ovensEtuves   : ovensChambres;
+  const historyData = source === "etuves" ? historyEtuves : historyChambres;
+  const isLoading   = source === "etuves" ? loadingEtuves : loadingChambres;
+  const deviceLabel = source === "etuves" ? "étuve"       : "chambre";
 
   const [period, setPeriod]       = useState<Period>("30j");
   const [groupBy, setGroupBy]     = useState<"week" | "month">("week");
   const [selectedOven, setSelectedOven] = useState<string>("all");
+
+  // reset filtre étuve si on change de source
+  const handleSourceChange = (s: Source) => { setSource(s); setSelectedOven("all"); };
 
   // liste unique des étuves ayant des opérations
   const ovenOptions = useMemo(() => {
@@ -180,7 +192,7 @@ function StatsPage() {
           <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Analytique</p>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Statistiques & Reporting</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Performance du parc · {ovens.length} étuves · {ops.length} opérations totales
+            Performance du parc · {ovens.length} {deviceLabel}s · {ops.length} opérations totales
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -199,6 +211,29 @@ function StatsPage() {
             <FileText className="h-3.5 w-3.5" /> PDF
           </Button>
         </div>
+      </div>
+
+      {/* Sélecteur source */}
+      <div className="mb-6 inline-flex rounded-xl border border-border bg-card p-1 gap-1">
+        <button onClick={() => handleSourceChange("etuves")}
+          className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+            source === "etuves" ? "bg-primary text-primary-foreground shadow-sm glow-primary" : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+          }`}>
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18" strokeLinecap="round"/>
+            <circle cx="8" cy="15" r="1" fill="currentColor"/><circle cx="12" cy="15" r="1" fill="currentColor"/><circle cx="16" cy="15" r="1" fill="currentColor"/>
+          </svg>
+          Étuves
+        </button>
+        <button onClick={() => handleSourceChange("chambres")}
+          className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+            source === "chambres" ? "bg-primary text-primary-foreground shadow-sm glow-primary" : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+          }`}>
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z"/>
+          </svg>
+          Chambres climatiques
+        </button>
       </div>
 
       {/* Filters row */}
@@ -246,7 +281,7 @@ function StatsPage() {
       <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <KpiCard label="Opérations"    value={kpis.total}                              sub={`${kpis.completed} terminées`}              accent="primary" icon={<Activity className="h-5 w-5" />} />
         <KpiCard label="Heures totales" value={`${Math.round(kpis.totalHours)}h`}      sub={`moy. ${kpis.avgHours.toFixed(1)}h / op.`} accent="success" icon={<Clock className="h-5 w-5" />} />
-        <KpiCard label="Étuves actives" value={`${kpis.ovensUsed} / ${kpis.totalOvens}`} sub="ont été utilisées"                      accent="warning" icon={<Zap className="h-5 w-5" />} />
+        <KpiCard label={`${source === "etuves" ? "Étuves" : "Chambres"} actives`} value={`${kpis.ovensUsed} / ${kpis.totalOvens}`} sub="ont été utilisées"                      accent="warning" icon={<Zap className="h-5 w-5" />} />
         <KpiCard label="Taux couverture" value={`${kpis.utilRate}%`}                   sub="du parc utilisé"                           accent="busy"    icon={<TrendingUp className="h-5 w-5" />}>
           <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
             <div className="h-full rounded-full bg-busy transition-all duration-700" style={{ width: `${kpis.utilRate}%` }} />
@@ -275,7 +310,7 @@ function StatsPage() {
       <div className="mt-4 rounded-xl border border-border bg-card p-5">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-semibold text-foreground">Récapitulatif par étuve</h3>
+            <h3 className="text-sm font-semibold text-foreground">Récapitulatif par {deviceLabel}</h3>
             <p className="text-xs text-muted-foreground">Détail opérations et durée cumulée</p>
           </div>
           {selectedOven !== "all" && (
