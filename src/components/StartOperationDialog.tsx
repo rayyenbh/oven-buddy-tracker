@@ -90,8 +90,16 @@ export function StartOperationDialog({
     if (!temperature.trim() || isNaN(t)) return "Température requise (en °C)";
     if (!dateDebut) return "Date de début requise";
     if (!heureDebut) return "Heure de début requise";
-    const h = parseFloat(dureeHeures);
-    if (!dureeHeures.trim() || isNaN(h) || h <= 0) return "Durée (heures) requise et > 0";
+    if (endMode === "duree") {
+      const h = parseFloat(dureeHeures);
+      if (!dureeHeures.trim() || isNaN(h) || h <= 0) return "Durée (heures) requise et > 0";
+    } else {
+      if (!dateFinManuel) return "Date de fin requise";
+      if (!heureFinManuel) return "Heure de fin requise";
+      const start = new Date(`${dateDebut}T${heureDebut}:00`);
+      const end = new Date(`${dateFinManuel}T${heureFinManuel}:00`);
+      if (!(end.getTime() > start.getTime())) return "La fin doit être après le début";
+    }
     if (cables.length === 0) return "Au moins un câble est requis";
     for (let i = 0; i < cables.length; i++) {
       const c = cables[i];
