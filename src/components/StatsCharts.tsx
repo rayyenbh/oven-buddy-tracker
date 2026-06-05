@@ -89,14 +89,11 @@ function LegendDot({ color, label, dashed }: { color: string; label: string; das
   );
 }
 
-export function StatsCharts({ isLoading, timelineData, statusData, perOvenData, radialData, groupBy, setGroupBy }: {
+export function StatsCharts({ isLoading, statusData, perOvenData, radialData }: {
   isLoading: boolean;
-  timelineData: TimelineRow[];
   statusData: StatusRow[];
   perOvenData: OvenRow[];
   radialData: RadialRow[];
-  groupBy: "week" | "month";
-  setGroupBy: (g: "week" | "month") => void;
 }) {
   if (isLoading) return (
     <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -111,52 +108,18 @@ export function StatsCharts({ isLoading, timelineData, statusData, perOvenData, 
 
   return (
     <>
-      {/* Row 1 : Timeline + Pie */}
-      <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+      {/* Row 1 : Pie status */}
+      <div className="mb-4 grid grid-cols-1 gap-4">
         <ChartCard
-          title="Activité dans le temps"
-          subtitle="Opérations et heures par période"
-          className="lg:col-span-2"
-          action={
-            <div className="inline-flex rounded-lg border border-border bg-secondary/50 p-0.5 gap-0.5">
-              {(["week", "month"] as const).map(g => (
-                <button
-                  key={g}
-                  onClick={() => setGroupBy(g)}
-                  className={`rounded-md px-2.5 py-1 text-xs font-medium transition-all ${
-                    groupBy === g ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {g === "week" ? "Semaine" : "Mois"}
-                </button>
-              ))}
-            </div>
-          }
+          title="Répartition statut"
+          subtitle="Terminées vs en cours"
+          info="Proportion des opérations terminées versus celles encore en cours sur la période sélectionnée."
         >
-          {timelineData.length === 0 ? <EmptyChart /> : (
-            <ResponsiveContainer width="100%" height={220}>
-              <LineChart data={timelineData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.22 0.025 250)" vertical={false} />
-                <XAxis dataKey="label" tick={{ fontSize: 10, fill: "oklch(0.55 0.02 250)" }} tickLine={false} axisLine={false} />
-                <YAxis tick={{ fontSize: 10, fill: "oklch(0.55 0.02 250)" }} tickLine={false} axisLine={false} />
-                <Tooltip content={<CustomTooltip />} />
-                <Line type="monotone" dataKey="ops" name="Opérations" stroke={CHART_COLORS[0]} strokeWidth={2.5} dot={{ r: 3, fill: CHART_COLORS[0], strokeWidth: 0 }} activeDot={{ r: 5 }} />
-                <Line type="monotone" dataKey="heures" name="Heures" stroke={CHART_COLORS[1]} strokeWidth={2} strokeDasharray="4 3" dot={{ r: 3, fill: CHART_COLORS[1], strokeWidth: 0 }} activeDot={{ r: 5 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          )}
-          <div className="mt-3 flex items-center gap-5 px-1">
-            <LegendDot color={CHART_COLORS[0]} label="Opérations" />
-            <LegendDot color={CHART_COLORS[1]} label="Heures" dashed />
-          </div>
-        </ChartCard>
-
-        <ChartCard title="Répartition statut" subtitle="Terminées vs en cours">
           {statusData.length === 0 ? <EmptyChart /> : (
             <div className="flex flex-col items-center gap-4">
-              <ResponsiveContainer width="100%" height={180}>
+              <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
-                  <Pie data={statusData} cx="50%" cy="50%" innerRadius={52} outerRadius={78} paddingAngle={3} dataKey="value" strokeWidth={0}>
+                  <Pie data={statusData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={3} dataKey="value" strokeWidth={0}>
                     {statusData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                   </Pie>
                   <Tooltip content={<CustomTooltip />} />
@@ -175,6 +138,7 @@ export function StatsCharts({ isLoading, timelineData, statusData, perOvenData, 
           )}
         </ChartCard>
       </div>
+
 
       {/* Row 2 : Bar charge + Radial */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
