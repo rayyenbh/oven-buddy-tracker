@@ -117,6 +117,48 @@ export type StatsOperation = {
   oven: { id: string; internal_number: string; serial_number: string };
 };
 
+// ── Chambres climatiques ──────────────────────────────────────────────────
+
+export type ChambreClimatique = {
+  id: string;
+  position: number;
+  serial_number: string;
+  internal_number: string;
+};
+
+export type ChambreWithActive = ChambreClimatique & { active: Operation | null };
+
+export async function fetchChambresWithActive(): Promise<ChambreWithActive[]> {
+  if (!isOnline()) {
+    return getCachedData<ChambreWithActive>("chambres");
+  }
+  const [{ data: chambres, error: cErr }, { data: ops, error: opErr }] = await Promise.all([
+    supabase.from("chambres_climatiques").select("*").order("position", { ascending: true }),
+    supabase.from("operations_chambres").select("*").eq("status", "active"),
+  ]);
+  if (cErr) throw cErr;
+  if (opErr) throw opErr;
+  const byC = new Map<string, Operation>();
+  (ops ?? []).forEach((o) => byC.set(o.chambre_id, o as Operation));
+  const result = (chambres ?? []).map((c) => ({
+    ...(c as ChambreClimatique),
+    active: byC.get(c.id) ?? null,
+  }));
+  cacheData("chambres", result).catch(() => {});
+  return result;
+}
+
+export async function fetchStatsChambres(): Promise<StatsOperation[]> {
+  const { data, error } = await supabase
+    .from("operations_chambres")
+    .select("id, chambre_id as oven_id, date_debut, heure_debut, date_fin, heure_fin, status, ended_at, created_at, chambre:chambres_climatiques(id, internal_number, serial_number)")
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map((d: any) => ({ ...d, oven: d.chambre })) as any;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export async function fetchStats(): Promise<StatsOperation[]> {
   const { data, error } = await supabase
     .from("operations")

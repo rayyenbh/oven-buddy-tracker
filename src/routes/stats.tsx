@@ -4,10 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchStats, fetchOvensWithActive, fetchHistory } from "@/lib/oven-queries";
 import type { StatsOperation } from "@/lib/oven-queries";
 import { exportCSV, exportPDF } from "@/lib/export";
-import { Download, FileText, TrendingUp, Clock, Activity, Zap } from "lucide-react";
+import { Download, FileText, TrendingUp, Clock, Activity, Zap, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-// Lazy-load the Recharts component so it is never evaluated on the server
 const StatsCharts = lazy(() =>
   import("@/components/StatsCharts").then(m => ({ default: m.StatsCharts }))
 );
@@ -88,26 +87,44 @@ function StatsPage() {
     queryFn: fetchHistory,
   });
 
-  const [period, setPeriod]   = useState<Period>("30j");
-  const [groupBy, setGroupBy] = useState<"week" | "month">("week");
+  const [period, setPeriod]       = useState<Period>("30j");
+  const [groupBy, setGroupBy]     = useState<"week" | "month">("week");
+  const [selectedOven, setSelectedOven] = useState<string>("all");
+
+  // liste unique des étuves ayant des opérations
+  const ovenOptions = useMemo(() => {
+    const seen = new Map<string, string>();
+    ops.forEach((o) => {
+      if (!seen.has(o.oven_id)) seen.set(o.oven_id, o.oven.internal_number);
+    });
+    return Array.from(seen.entries())
+      .sort((a, b) => a[1].localeCompare(b[1]))
+      .map(([id, label]) => ({ id, label }));
+  }, [ops]);
 
   const filtered = useMemo(() => {
     const days = PERIOD_DAYS[period];
-    if (!days) return ops;
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - days);
-    return ops.filter(o => new Date(o.created_at) >= cutoff);
-  }, [ops, period]);
+    let arr = ops;
+    if (days) {
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - days);
+      arr = arr.filter(o => new Date(o.created_at) >= cutoff);
+    }
+    if (selectedOven !== "all") {
+      arr = arr.filter(o => o.oven_id === selectedOven);
+    }
+    return arr;
+  }, [ops, period, selectedOven]);
 
   const kpis = useMemo(() => {
     const total      = filtered.length;
     const completed  = filtered.filter(o => o.status === "completed").length;
-    const totalHours = filtered.reduce((acc, o) => acc + durationHours(o), 0);
-    const avgHours   = total > 0 ? totalHours / total : 0;
+    const totalHrs   = filtered.reduce((acc, o) => acc + durationHours(o), 0);
+    const avgHrs     = total > 0 ? totalHrs / total : 0;
     const ovensUsed  = new Set(filtered.map(o => o.oven_id)).size;
     const totalOvens = ovens.length;
     const utilRate   = totalOvens > 0 ? Math.round((ovensUsed / totalOvens) * 100) : 0;
-    return { total, completed, totalHours, avgHours, ovensUsed, totalOvens, utilRate };
+    return { total, completed, totalHours: totalHrs, avgHours: avgHrs, ovensUsed, totalOvens, utilRate };
   }, [filtered, ovens]);
 
   const perOvenData = useMemo(() => {
@@ -163,7 +180,7 @@ function StatsPage() {
           <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Analytique</p>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Statistiques & Reporting</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Performance du parc · {ovens.length} fours · {ops.length} opérations totales
+            Performance du parc · {ovens.length} étuves · {ops.length} opérations totales
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -184,8 +201,9 @@ function StatsPage() {
         </div>
       </div>
 
-      {/* Period selector */}
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      {/* Filters row */}
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between flex-wrap">
+        {/* Period selector */}
         <div className="inline-flex rounded-xl border border-border bg-card p-1 gap-1">
           {(["7j", "30j", "90j", "365j", "tout"] as Period[]).map(p => (
             <button
@@ -201,24 +219,42 @@ function StatsPage() {
             </button>
           ))}
         </div>
-        <p className="text-xs text-muted-foreground font-mono">
-          {filtered.length} opération{filtered.length !== 1 ? "s" : ""} dans la période
-        </p>
+
+        {/* Étuve filter */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Filter className="h-3.5 w-3.5" />
+            <span className="font-medium">Étuve :</span>
+          </div>
+          <select
+            value={selectedOven}
+            onChange={(e) => setSelectedOven(e.target.value)}
+            className="rounded-xl border border-border bg-card px-3 py-1.5 text-sm text-foreground outline-none transition-all focus:border-primary/60 focus:ring-2 focus:ring-primary/15 cursor-pointer"
+          >
+            <option value="all">Toutes les étuves</option>
+            {ovenOptions.map(o => (
+              <option key={o.id} value={o.id}>{o.label}</option>
+            ))}
+          </select>
+          <p className="text-xs text-muted-foreground font-mono">
+            {filtered.length} op{filtered.length !== 1 ? "s" : ""}
+          </p>
+        </div>
       </div>
 
       {/* KPI Cards */}
       <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <KpiCard label="Opérations"    value={kpis.total}                         sub={`${kpis.completed} terminées`}              accent="primary" icon={<Activity className="h-5 w-5" />} />
-        <KpiCard label="Heures totales" value={`${Math.round(kpis.totalHours)}h`} sub={`moy. ${kpis.avgHours.toFixed(1)}h / op.`} accent="success" icon={<Clock className="h-5 w-5" />} />
-        <KpiCard label="Fours actifs"  value={`${kpis.ovensUsed} / ${kpis.totalOvens}`} sub="ont été utilisés"               accent="warning" icon={<Zap className="h-5 w-5" />} />
-        <KpiCard label="Taux couverture" value={`${kpis.utilRate}%`}              sub="du parc utilisé"                          accent="busy"    icon={<TrendingUp className="h-5 w-5" />}>
+        <KpiCard label="Opérations"    value={kpis.total}                              sub={`${kpis.completed} terminées`}              accent="primary" icon={<Activity className="h-5 w-5" />} />
+        <KpiCard label="Heures totales" value={`${Math.round(kpis.totalHours)}h`}      sub={`moy. ${kpis.avgHours.toFixed(1)}h / op.`} accent="success" icon={<Clock className="h-5 w-5" />} />
+        <KpiCard label="Étuves actives" value={`${kpis.ovensUsed} / ${kpis.totalOvens}`} sub="ont été utilisées"                      accent="warning" icon={<Zap className="h-5 w-5" />} />
+        <KpiCard label="Taux couverture" value={`${kpis.utilRate}%`}                   sub="du parc utilisé"                           accent="busy"    icon={<TrendingUp className="h-5 w-5" />}>
           <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
             <div className="h-full rounded-full bg-busy transition-all duration-700" style={{ width: `${kpis.utilRate}%` }} />
           </div>
         </KpiCard>
       </div>
 
-      {/* Charts — client-only via lazy + Suspense to avoid SSR useRef/useContext crash */}
+      {/* Charts */}
       {isClient ? (
         <Suspense fallback={<ChartsSkeleton />}>
           <StatsCharts
@@ -235,17 +271,24 @@ function StatsPage() {
         <ChartsSkeleton />
       )}
 
-      {/* Summary table — pure HTML, always SSR-safe */}
+      {/* Summary table */}
       <div className="mt-4 rounded-xl border border-border bg-card p-5">
-        <div className="mb-4">
-          <h3 className="text-sm font-semibold text-foreground">Récapitulatif par four</h3>
-          <p className="text-xs text-muted-foreground">Détail opérations et durée cumulée</p>
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">Récapitulatif par étuve</h3>
+            <p className="text-xs text-muted-foreground">Détail opérations et durée cumulée</p>
+          </div>
+          {selectedOven !== "all" && (
+            <span className="text-xs rounded-full bg-primary/15 px-3 py-1 font-medium text-primary">
+              {ovenOptions.find(o => o.id === selectedOven)?.label}
+            </span>
+          )}
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border">
-                {["#", "Four", "Opérations", "Heures totales", "Moy. / op.", "Charge relative"].map((h, i) => (
+                {["#", "Étuve", "Opérations", "Heures totales", "Moy. / op.", "Charge relative"].map((h, i) => (
                   <th key={h} className={`px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground ${i >= 2 && i <= 4 ? "text-right" : "text-left"}`}>
                     {h}
                   </th>
@@ -270,7 +313,14 @@ function StatsPage() {
               ) : (() => {
                 const maxOps = perOvenData[0]?.ops ?? 1;
                 return perOvenData.map((row, i) => (
-                  <tr key={row.label} className={`border-b border-border/30 hover:bg-secondary/20 transition-colors ${i % 2 !== 0 ? "bg-secondary/10" : ""}`}>
+                  <tr
+                    key={row.label}
+                    className={`border-b border-border/30 hover:bg-secondary/20 transition-colors cursor-pointer ${i % 2 !== 0 ? "bg-secondary/10" : ""}`}
+                    onClick={() => {
+                      const found = ovenOptions.find(o => o.label === row.label);
+                      if (found) setSelectedOven(prev => prev === found.id ? "all" : found.id);
+                    }}
+                  >
                     <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{i + 1}</td>
                     <td className="px-3 py-2.5 font-mono text-sm font-bold text-primary">{row.label}</td>
                     <td className="px-3 py-2.5 text-right font-mono font-semibold text-foreground">{row.ops}</td>
@@ -305,8 +355,6 @@ function StatsPage() {
     </div>
   );
 }
-
-// ── Sub-components ──
 
 function KpiCard({ label, value, sub, accent, icon, children }: {
   label: string; value: string | number; sub: string;

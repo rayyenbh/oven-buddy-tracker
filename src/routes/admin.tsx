@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,15 +17,36 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Plus, Trash2, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { useAuth } from "@/lib/auth";
 
 const PAGE_SIZE = 15;
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
-  head: () => ({ meta: [{ title: "Fours — Administration" }] }),
+  head: () => ({ meta: [{ title: "Étuves — Administration" }] }),
 });
 
 function AdminPage() {
+  const { isAdmin } = useAuth();
+
+  if (!isAdmin) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center px-4">
+        <div className="max-w-sm text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-destructive/30 bg-destructive/10">
+            <svg className="h-8 w-8 text-destructive" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/>
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-foreground">Accès restreint</h2>
+          <p className="mt-2 text-sm text-muted-foreground">Cette page est réservée aux administrateurs.</p>
+          <Link to="/" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-all">
+            ← Retour au tableau
+          </Link>
+        </div>
+      </div>
+    );
+  }
   const qc = useQueryClient();
   const { data, isLoading } = useQuery<Oven[]>({
     queryKey: ["ovens-admin"],

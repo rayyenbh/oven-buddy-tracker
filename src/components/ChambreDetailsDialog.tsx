@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { OvenWithActive } from "@/lib/oven-queries";
+import type { ChambreWithActive } from "@/lib/oven-queries";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -42,42 +42,42 @@ function parseCables(raw: string | null): CableRow[] {
   try { return JSON.parse(raw) as CableRow[]; } catch { return []; }
 }
 
-export function OvenDetailsDialog({
-  oven,
+export function ChambreDetailsDialog({
+  chambre,
   open,
   onOpenChange,
 }: {
-  oven: OvenWithActive | null;
+  chambre: ChambreWithActive | null;
   open: boolean;
   onOpenChange: (b: boolean) => void;
 }) {
   const qc = useQueryClient();
+
   const endMut = useMutation({
     mutationFn: async () => {
-      if (!oven?.active) throw new Error("no active");
+      if (!chambre?.active) throw new Error("no active");
       const now = new Date();
       const { error } = await supabase
-        .from("operations")
+        .from("operations_chambres")
         .update({
           status: "completed",
           ended_at: now.toISOString(),
-          date_fin: oven.active.date_fin ?? now.toISOString().slice(0, 10),
-          heure_fin: oven.active.heure_fin ?? `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`,
+          date_fin: chambre.active.date_fin ?? now.toISOString().slice(0, 10),
+          heure_fin: chambre.active.heure_fin ?? `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`,
         })
-        .eq("id", oven.active.id);
+        .eq("id", chambre.active.id);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Opération terminée — étuve libérée");
-      qc.invalidateQueries({ queryKey: ["ovens"] });
-      qc.invalidateQueries({ queryKey: ["history"] });
+      toast.success("Opération terminée — chambre libérée");
+      qc.invalidateQueries({ queryKey: ["chambres"] });
       onOpenChange(false);
     },
     onError: (e: any) => toast.error(e.message ?? "Erreur"),
   });
 
-  if (!oven || !oven.active) return null;
-  const a = oven.active;
+  if (!chambre || !chambre.active) return null;
+  const a = chambre.active;
   const startISO = `${a.date_debut}T${a.heure_debut}`;
   const cables = parseCables((a as any).cables_json);
 
@@ -88,13 +88,14 @@ export function OvenDetailsDialog({
           <div className="flex items-center gap-3 flex-wrap">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-busy/15 shrink-0">
               <svg className="h-5 w-5 text-busy" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.047 8.287 8.287 0 0 0 9 9.601a8.983 8.983 0 0 1 3.361-6.387Z"/>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z"/>
               </svg>
             </div>
             <div className="min-w-0">
               <DialogTitle className="flex items-center gap-2 flex-wrap">
-                <span className="font-mono font-bold text-foreground">{oven.internal_number}</span>
-                <span className="font-mono text-sm font-normal text-muted-foreground">{oven.serial_number}</span>
+                <span className="font-mono font-bold text-foreground">{chambre.internal_number}</span>
+                <span className="font-mono text-sm font-normal text-muted-foreground">{chambre.serial_number}</span>
+                <span className="text-[10px] rounded-full bg-primary/15 px-2 py-0.5 text-primary font-semibold">Chambre climatique</span>
               </DialogTitle>
               <DialogDescription className="mt-0.5 flex items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-busy/15 px-2 py-0.5 text-xs font-semibold text-busy">
@@ -120,7 +121,6 @@ export function OvenDetailsDialog({
           <DetailRow label="Début" value={`${a.date_debut} · ${a.heure_debut}`} />
           <DetailRow label="Fin prévue" value={a.date_fin ? `${a.date_fin} · ${a.heure_fin ?? ""}` : null} />
 
-          {/* Câbles */}
           {cables.length > 0 ? (
             <div className="py-2.5 border-t border-border/50">
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">Câbles associés</p>
@@ -174,7 +174,7 @@ export function OvenDetailsDialog({
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <circle cx="12" cy="12" r="9"/><path d="m9 12 2 2 4-4" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
-                Libérer l'étuve
+                Libérer la chambre
               </span>
             )}
           </Button>
