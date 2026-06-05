@@ -10,6 +10,7 @@ export function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [role, setRole] = useState<"admin" | "technicien">("technicien");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -36,7 +37,7 @@ export function AuthPage() {
           password,
           options: {
             emailRedirectTo: window.location.origin,
-            data: { full_name: fullName.trim() },
+            data: { full_name: fullName.trim(), requested_role: role },
           },
         });
         if (error) throw error;
@@ -105,19 +106,47 @@ export function AuthPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === "signup" && (
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Nom complet
-                </Label>
-                <Input
-                  type="text"
-                  placeholder="Prénom Nom"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  maxLength={100}
-                  autoComplete="name"
-                />
-              </div>
+              <>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Nom complet
+                  </Label>
+                  <Input
+                    type="text"
+                    placeholder="Prénom Nom"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    maxLength={100}
+                    autoComplete="name"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Rôle
+                  </Label>
+                  <div className="flex items-center gap-1 rounded-xl border border-border bg-secondary/30 p-1">
+                    {(["technicien", "admin"] as const).map((r) => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => setRole(r)}
+                        className={`flex-1 rounded-lg px-3 py-1.5 text-sm font-medium capitalize transition-all ${
+                          role === r
+                            ? "bg-primary text-primary-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    {role === "admin"
+                      ? "Accès complet : configuration des étuves et gestion des utilisateurs."
+                      : "Accès aux opérations, planning et historique."}
+                  </p>
+                </div>
+              </>
             )}
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">

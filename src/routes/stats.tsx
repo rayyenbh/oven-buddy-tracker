@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchStats, fetchOvensWithActive, fetchHistory } from "@/lib/oven-queries";
 import type { StatsOperation } from "@/lib/oven-queries";
 import { exportCSV, exportPDF } from "@/lib/export";
-import { Download, FileText, TrendingUp, Clock, Activity, Zap } from "lucide-react";
+import { Download, FileText, TrendingUp, Clock, Activity, Zap, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 // Lazy-load the Recharts component so it is never evaluated on the server
@@ -89,7 +89,6 @@ function StatsPage() {
   });
 
   const [period, setPeriod]   = useState<Period>("30j");
-  const [groupBy, setGroupBy] = useState<"week" | "month">("week");
 
   const filtered = useMemo(() => {
     const days = PERIOD_DAYS[period];
@@ -125,18 +124,7 @@ function StatsPage() {
       .map(d => ({ ...d, heures: Math.round(d.heures * 10) / 10 }));
   }, [filtered]);
 
-  const timelineData = useMemo(() => {
-    const map = new Map<string, { label: string; ops: number; heures: number }>();
-    filtered.forEach(o => {
-      const date = new Date(o.date_debut);
-      const key  = groupBy === "week" ? isoWeek(date) : isoMonth(date);
-      if (!map.has(key)) map.set(key, { label: key, ops: 0, heures: 0 });
-      const e = map.get(key)!;
-      e.ops++;
-      e.heures += durationHours(o);
-    });
-    return Array.from(map.values()).map(d => ({ ...d, heures: Math.round(d.heures * 10) / 10 }));
-  }, [filtered, groupBy]);
+
 
   const statusData = useMemo(() => [
     { name: "Terminées", value: filtered.filter(o => o.status === "completed").length, color: CHART_COLORS[1] },
@@ -163,7 +151,7 @@ function StatsPage() {
           <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Analytique</p>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Statistiques & Reporting</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Performance du parc · {ovens.length} fours · {ops.length} opérations totales
+            Performance du parc · {ovens.length} étuves · {ops.length} opérations totales
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -208,10 +196,26 @@ function StatsPage() {
 
       {/* KPI Cards */}
       <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <KpiCard label="Opérations"    value={kpis.total}                         sub={`${kpis.completed} terminées`}              accent="primary" icon={<Activity className="h-5 w-5" />} />
-        <KpiCard label="Heures totales" value={`${Math.round(kpis.totalHours)}h`} sub={`moy. ${kpis.avgHours.toFixed(1)}h / op.`} accent="success" icon={<Clock className="h-5 w-5" />} />
-        <KpiCard label="Fours actifs"  value={`${kpis.ovensUsed} / ${kpis.totalOvens}`} sub="ont été utilisés"               accent="warning" icon={<Zap className="h-5 w-5" />} />
-        <KpiCard label="Taux couverture" value={`${kpis.utilRate}%`}              sub="du parc utilisé"                          accent="busy"    icon={<TrendingUp className="h-5 w-5" />}>
+        <KpiCard
+          label="Opérations" value={kpis.total} sub={`${kpis.completed} terminées`}
+          accent="primary" icon={<Activity className="h-5 w-5" />}
+          info="Nombre total d'opérations enregistrées dans la période sélectionnée (en cours + terminées)."
+        />
+        <KpiCard
+          label="Heures totales" value={`${Math.round(kpis.totalHours)}h`} sub={`moy. ${kpis.avgHours.toFixed(1)}h / op.`}
+          accent="success" icon={<Clock className="h-5 w-5" />}
+          info="Somme des durées de toutes les opérations de la période. Pour les opérations en cours, la durée est calculée jusqu'à maintenant."
+        />
+        <KpiCard
+          label="Étuves actives" value={`${kpis.ovensUsed} / ${kpis.totalOvens}`} sub="ont été utilisées"
+          accent="warning" icon={<Zap className="h-5 w-5" />}
+          info="Nombre d'étuves distinctes ayant accueilli au moins une opération dans la période, sur le total du parc."
+        />
+        <KpiCard
+          label="Taux couverture" value={`${kpis.utilRate}%`} sub="du parc utilisé"
+          accent="busy" icon={<TrendingUp className="h-5 w-5" />}
+          info="Pourcentage des étuves du parc ayant été utilisées au moins une fois dans la période."
+        >
           <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
             <div className="h-full rounded-full bg-busy transition-all duration-700" style={{ width: `${kpis.utilRate}%` }} />
           </div>
@@ -223,12 +227,9 @@ function StatsPage() {
         <Suspense fallback={<ChartsSkeleton />}>
           <StatsCharts
             isLoading={isLoading}
-            timelineData={timelineData}
             statusData={statusData}
             perOvenData={perOvenData}
             radialData={radialData}
-            groupBy={groupBy}
-            setGroupBy={setGroupBy}
           />
         </Suspense>
       ) : (
@@ -238,14 +239,14 @@ function StatsPage() {
       {/* Summary table — pure HTML, always SSR-safe */}
       <div className="mt-4 rounded-xl border border-border bg-card p-5">
         <div className="mb-4">
-          <h3 className="text-sm font-semibold text-foreground">Récapitulatif par four</h3>
+          <h3 className="text-sm font-semibold text-foreground">Récapitulatif par étuve</h3>
           <p className="text-xs text-muted-foreground">Détail opérations et durée cumulée</p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border">
-                {["#", "Four", "Opérations", "Heures totales", "Moy. / op.", "Charge relative"].map((h, i) => (
+                {["#", "Étuve", "Opérations", "Heures totales", "Moy. / op.", "Charge relative"].map((h, i) => (
                   <th key={h} className={`px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground ${i >= 2 && i <= 4 ? "text-right" : "text-left"}`}>
                     {h}
                   </th>
@@ -308,9 +309,10 @@ function StatsPage() {
 
 // ── Sub-components ──
 
-function KpiCard({ label, value, sub, accent, icon, children }: {
+function KpiCard({ label, value, sub, accent, icon, info, children }: {
   label: string; value: string | number; sub: string;
-  accent: "primary" | "success" | "warning" | "busy"; icon: React.ReactNode; children?: React.ReactNode;
+  accent: "primary" | "success" | "warning" | "busy"; icon: React.ReactNode;
+  info?: string; children?: React.ReactNode;
 }) {
   const cls = {
     primary: { val: "text-primary", bg: "bg-primary/10 text-primary" },
@@ -322,7 +324,19 @@ function KpiCard({ label, value, sub, accent, icon, children }: {
     <div className="rounded-xl border border-border bg-card p-4 flex flex-col gap-3">
       <div className="flex items-start justify-between">
         <div className="min-w-0">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
+          <div className="flex items-center gap-1.5">
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
+            {info && (
+              <button
+                type="button"
+                title={info}
+                aria-label={`Info: ${info}`}
+                className="text-muted-foreground/60 hover:text-foreground transition-colors"
+              >
+                <Info className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
           <p className={`mt-1 text-2xl font-bold font-mono tracking-tight ${cls.val}`}>{value}</p>
           <p className="mt-0.5 text-xs text-muted-foreground">{sub}</p>
         </div>

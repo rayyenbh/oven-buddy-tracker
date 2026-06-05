@@ -42,7 +42,10 @@ export function StartOperationDialog({
   const [temperature, setTemperature] = useState("");
   const [dateDebut, setDateDebut] = useState(todayISO());
   const [heureDebut, setHeureDebut] = useState(nowHM());
+  const [endMode, setEndMode] = useState<"duree" | "manuel">("duree");
   const [dureeHeures, setDureeHeures] = useState("");
+  const [dateFinManuel, setDateFinManuel] = useState("");
+  const [heureFinManuel, setHeureFinManuel] = useState("");
   const [notes, setNotes] = useState("");
   const [cables, setCables] = useState<CableInput[]>([emptyCable()]);
 
@@ -52,16 +55,26 @@ export function StartOperationDialog({
   }, [open, fullName, demandeur]);
 
   const computedEnd = useMemo(() => {
+    if (endMode === "manuel") {
+      if (!dateFinManuel || !heureFinManuel) return null;
+      // sanity check: end > start
+      const start = new Date(`${dateDebut}T${heureDebut}:00`);
+      const end = new Date(`${dateFinManuel}T${heureFinManuel}:00`);
+      if (!(end.getTime() > start.getTime())) return null;
+      return { date: dateFinManuel, time: heureFinManuel };
+    }
     const h = parseFloat(dureeHeures);
     if (!dateDebut || !heureDebut || !dureeHeures || isNaN(h) || h <= 0) return null;
     return addHoursToDateTime(dateDebut, heureDebut, h);
-  }, [dateDebut, heureDebut, dureeHeures]);
+  }, [endMode, dateDebut, heureDebut, dureeHeures, dateFinManuel, heureFinManuel]);
 
   const reset = () => {
     setDemandeur(fullName || "");
     setRealisateur(""); setProjet(""); setCdc(""); setEssai("");
     setSpecification(""); setTemperature("");
-    setDateDebut(todayISO()); setHeureDebut(nowHM()); setDureeHeures("");
+    setDateDebut(todayISO()); setHeureDebut(nowHM());
+    setEndMode("duree"); setDureeHeures("");
+    setDateFinManuel(""); setHeureFinManuel("");
     setNotes(""); setCables([emptyCable()]);
   };
 
@@ -77,8 +90,16 @@ export function StartOperationDialog({
     if (!temperature.trim() || isNaN(t)) return "Température requise (en °C)";
     if (!dateDebut) return "Date de début requise";
     if (!heureDebut) return "Heure de début requise";
-    const h = parseFloat(dureeHeures);
-    if (!dureeHeures.trim() || isNaN(h) || h <= 0) return "Durée (heures) requise et > 0";
+    if (endMode === "duree") {
+      const h = parseFloat(dureeHeures);
+      if (!dureeHeures.trim() || isNaN(h) || h <= 0) return "Durée (heures) requise et > 0";
+    } else {
+      if (!dateFinManuel) return "Date de fin requise";
+      if (!heureFinManuel) return "Heure de fin requise";
+      const start = new Date(`${dateDebut}T${heureDebut}:00`);
+      const end = new Date(`${dateFinManuel}T${heureFinManuel}:00`);
+      if (!(end.getTime() > start.getTime())) return "La fin doit être après le début";
+    }
     if (cables.length === 0) return "Au moins un câble est requis";
     for (let i = 0; i < cables.length; i++) {
       const c = cables[i];
@@ -93,6 +114,9 @@ export function StartOperationDialog({
       const err = validate();
       if (err) throw new Error(err);
       const end = computedEnd!;
+      const startMs = new Date(`${dateDebut}T${heureDebut}:00`).getTime();
+      const endMs = new Date(`${end.date}T${end.time}:00`).getTime();
+      const durationHours = endMode === "duree" ? parseFloat(dureeHeures) : (endMs - startMs) / 3_600_000;
       const { data: op, error: oErr } = await supabase.from("operations").insert({
         oven_id: oven!.id,
         demandeur: demandeur.trim(),
@@ -102,7 +126,7 @@ export function StartOperationDialog({
         essai: essai.trim(),
         specification: specification.trim(),
         temperature: parseFloat(temperature),
-        duree_heures: parseFloat(dureeHeures),
+        duree_heures: Math.round(durationHours * 100) / 100,
         date_debut: dateDebut,
         heure_debut: heureDebut,
         date_fin: end.date,
@@ -240,20 +264,59 @@ export function StartOperationDialog({
 
           {/* Planning */}
           <Section title="Planning" color="success">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="Date début" required type="date" value={dateDebut} onChange={setDateDebut} />
               <Field label="Heure début" required type="time" value={heureDebut} onChange={setHeureDebut} />
-              <Field label="Durée (heures)" required type="number" step="0.5" value={dureeHeures} onChange={setDureeHeures} placeholder="ex: 2.5" />
             </div>
+
+            <div className="mt-4">
+              <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Définir la fin par
+              </Label>
+              <div className="mt-1.5 inline-flex rounded-lg border border-border bg-secondary/40 p-0.5 gap-0.5">
+                {(["duree", "manuel"] as const).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setEndMode(m)}
+                    className={`rounded-md px-3 py-1 text-xs font-medium transition-all ${
+                      endMode === m
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {m === "duree" ? "Durée (heures)" : "Date & heure de fin"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {endMode === "duree" ? (
+              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Field
+                  label="Durée (heures)" required type="number" step="0.5"
+                  value={dureeHeures} onChange={setDureeHeures} placeholder="ex: 2.5"
+                />
+              </div>
+            ) : (
+              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Field label="Date fin" required type="date" value={dateFinManuel} onChange={setDateFinManuel} />
+                <Field label="Heure fin" required type="time" value={heureFinManuel} onChange={setHeureFinManuel} />
+              </div>
+            )}
+
             {computedEnd && (
               <div className="mt-3 rounded-lg border border-success/30 bg-success/10 px-3 py-2.5">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-success">Fin calculée automatiquement</p>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-success">
+                  {endMode === "duree" ? "Fin calculée automatiquement" : "Fin enregistrée"}
+                </p>
                 <p className="mt-0.5 font-mono text-sm font-medium text-foreground">
                   {computedEnd.date} · {computedEnd.time}
                 </p>
               </div>
             )}
           </Section>
+
 
           {/* Notes */}
           <div className="space-y-1.5">
