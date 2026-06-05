@@ -89,7 +89,6 @@ function StatsPage() {
   });
 
   const [period, setPeriod]   = useState<Period>("30j");
-  const [groupBy, setGroupBy] = useState<"week" | "month">("week");
 
   const filtered = useMemo(() => {
     const days = PERIOD_DAYS[period];
