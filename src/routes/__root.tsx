@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -7,7 +7,6 @@ import {
   useRouter,
   HeadContent,
   Scripts,
-  useLocation,
 } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider, useTheme } from "@/lib/theme";
@@ -87,7 +86,12 @@ function RootShell({ children }: { children: React.ReactNode }) {
     <html lang="fr">
       <head><HeadContent /></head>
       <body>
-        {children}
+        <ThemeProvider>
+          <AuthProvider>
+            {children}
+            <Toaster position="top-right" richColors />
+          </AuthProvider>
+        </ThemeProvider>
         <Scripts />
       </body>
     </html>
@@ -105,43 +109,50 @@ function LiveDot() {
 
 function Header() {
   const { user, logout, isAdmin } = useAuth();
-  const router = useRouter();
+  const [dropOpen, setDropOpen] = useState(false);
+  const dropRef = useRef<HTMLDivElement>(null);
 
-  const handleLogout = () => {
-    logout();
-    router.navigate({ to: "/login" });
-  };
+  const handleLogout = () => { setDropOpen(false); logout(); };
+
+  // Fermer dropdown au clic extérieur
+  useEffect(() => {
+    if (!dropOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (dropRef.current && !dropRef.current.contains(e.target as Node)) setDropOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [dropOpen]);
 
   return (
     <header className="sticky top-0 z-50 glass border-b border-border/50">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
-        <Link to="/" className="flex items-center gap-3 group">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg glow-primary transition-all group-hover:scale-105">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
-              <rect x="3" y="4" width="18" height="16" rx="2" />
-              <path d="M3 10h18" strokeLinecap="round" />
-              <circle cx="8" cy="15" r="1.5" fill="currentColor" />
-              <circle cx="12" cy="15" r="1.5" fill="currentColor" />
-              <circle cx="16" cy="15" r="1.5" fill="currentColor" />
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2.5 sm:px-6">
+
+        {/* Logo */}
+        <Link to="/" className="flex items-center gap-2.5 group shrink-0">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow glow-primary transition-all group-hover:scale-105">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+              <rect x="3" y="4" width="18" height="16" rx="2"/>
+              <path d="M3 10h18" strokeLinecap="round"/>
+              <circle cx="8" cy="15" r="1.5" fill="currentColor"/>
+              <circle cx="12" cy="15" r="1.5" fill="currentColor"/>
+              <circle cx="16" cy="15" r="1.5" fill="currentColor"/>
             </svg>
           </div>
-          <div>
+          <div className="hidden sm:block">
             <div className="text-sm font-bold leading-tight tracking-tight text-foreground">ThermoTrack</div>
-            <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-widest text-muted-foreground leading-tight">
-              <LiveDot />
-              Temps réel
+            <div className="flex items-center gap-1 text-[9px] font-medium uppercase tracking-widest text-muted-foreground leading-tight">
+              <LiveDot /><span>Temps réel</span>
             </div>
           </div>
         </Link>
 
-        <nav className="flex items-center gap-1">
-          <ThemeToggle />
-          <NavLink to="/" exact label="Tableau" icon={
+        {/* Nav links */}
+        <nav className="flex items-center gap-0.5">
+          <NavLink to="/" exact label="Étuves" icon={
             <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <rect x="3" y="3" width="7" height="7" rx="1.5"/>
-              <rect x="14" y="3" width="7" height="7" rx="1.5"/>
-              <rect x="3" y="14" width="7" height="7" rx="1.5"/>
-              <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+              <rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18" strokeLinecap="round"/>
+              <circle cx="8" cy="15" r="1" fill="currentColor"/><circle cx="12" cy="15" r="1" fill="currentColor"/><circle cx="16" cy="15" r="1" fill="currentColor"/>
             </svg>
           }/>
           <NavLink to="/chambres" label="Chambres" icon={
@@ -151,11 +162,10 @@ function Header() {
           }/>
           <NavLink to="/historique" label="Historique" icon={
             <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="9"/>
-              <path d="M12 7v5l3 3" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           }/>
-          <NavLink to="/stats" label="Statistiques" icon={
+          <NavLink to="/stats" label="Stats" icon={
             <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"/>
             </svg>
@@ -164,47 +174,116 @@ function Header() {
             <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <rect x="3" y="4" width="18" height="18" rx="2"/>
               <path d="M16 2v4M8 2v4M3 10h18" strokeLinecap="round"/>
-              <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           }/>
           {isAdmin && (
             <NavLink to="/admin" label="Admin" icon={
               <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75"/>
               </svg>
             }/>
-          )}
-          {isAdmin && (
-            <NavLink to="/users" label="Utilisateurs" icon={
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"/>
-              </svg>
-            }/>
-          )}
-
-          {/* User info + logout */}
-          {user && (
-            <div className="flex items-center gap-2 ml-1 pl-2 border-l border-border/50">
-              <div className="hidden sm:flex flex-col items-end">
-                <span className="text-xs font-semibold text-foreground leading-tight">{user.username}</span>
-                <span className={`text-[10px] font-medium leading-tight ${user.role === "admin" ? "text-primary" : "text-success"}`}>
-                  {user.role === "admin" ? "Administrateur" : "Technicien"}
-                </span>
-              </div>
-              <button
-                onClick={handleLogout}
-                title="Se déconnecter"
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-transparent text-muted-foreground transition-all hover:bg-destructive/10 hover:text-destructive"
-              >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75"/>
-                </svg>
-              </button>
-            </div>
           )}
         </nav>
+
+        {/* Right side : theme + user dropdown */}
+        <div className="flex items-center gap-1 shrink-0">
+          <ThemeToggle />
+
+          {user && (
+            <div className="relative ml-1" ref={dropRef}>
+              <button
+                onClick={() => setDropOpen((v) => !v)}
+                className={`flex items-center gap-2 rounded-xl border px-2.5 py-1.5 transition-all ${
+                  dropOpen ? "border-primary/40 bg-primary/10" : "border-border hover:bg-secondary"
+                }`}
+              >
+                {/* Avatar initiales */}
+                <div className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold uppercase ${
+                  user.role === "admin" ? "bg-primary/20 text-primary" : "bg-success/20 text-success"
+                }`}>
+                  {user.username.slice(0, 2)}
+                </div>
+                <div className="hidden sm:block text-left">
+                  <div className="text-xs font-semibold text-foreground leading-tight">{user.username}</div>
+                  <div className={`text-[9px] font-medium leading-tight ${user.role === "admin" ? "text-primary" : "text-success"}`}>
+                    {user.role === "admin" ? "Administrateur" : "Technicien"}
+                  </div>
+                </div>
+                <svg className={`h-3 w-3 text-muted-foreground transition-transform ${dropOpen ? "rotate-180" : ""}`}
+                  fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m19 9-7 7-7-7"/>
+                </svg>
+              </button>
+
+              {/* Dropdown */}
+              {dropOpen && (
+                <div className="absolute right-0 top-full mt-1.5 w-52 rounded-xl border border-border bg-card shadow-xl overflow-hidden z-50">
+                  {/* Header dropdown */}
+                  <div className="px-4 py-3 border-b border-border/50 bg-secondary/30">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold uppercase ${
+                        user.role === "admin" ? "bg-primary/20 text-primary" : "bg-success/20 text-success"
+                      }`}>
+                        {user.username.slice(0, 2)}
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-foreground">{user.username}</div>
+                        <div className={`text-[10px] font-medium ${user.role === "admin" ? "text-primary" : "text-success"}`}>
+                          {user.role === "admin" ? "Administrateur" : "Technicien"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions admin */}
+                  {isAdmin && (
+                    <div className="py-1">
+                      <DropItem to="/admin" label="Administration" icon={
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75"/>
+                        </svg>
+                      } onClick={() => setDropOpen(false)} />
+                      <DropItem to="/users" label="Utilisateurs" icon={
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"/>
+                        </svg>
+                      } onClick={() => setDropOpen(false)} />
+                      <div className="mx-3 my-1 border-t border-border/50" />
+                    </div>
+                  )}
+
+                  {/* Déconnexion */}
+                  <div className="py-1">
+                    <button
+                      onClick={handleLogout}
+                      className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                    >
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75"/>
+                      </svg>
+                      Se déconnecter
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </header>
+  );
+}
+
+function DropItem({ to, label, icon, onClick }: { to: string; label: string; icon: React.ReactNode; onClick: () => void }) {
+  return (
+    <Link
+      to={to}
+      onClick={onClick}
+      className="flex items-center gap-2.5 px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
+    >
+      <span className="text-muted-foreground">{icon}</span>
+      {label}
+    </Link>
   );
 }
 
@@ -292,27 +371,16 @@ function OfflineBanner() {
 
 function AppShell() {
   const { user } = useAuth();
-  const router = useRouter();
-  const location = useLocation();
-  const isLoginPage = location.pathname === "/login";
-  const needsRedirect = !user && !isLoginPage;
 
-  useEffect(() => {
-    if (needsRedirect) {
-      router.navigate({ to: "/login" });
-    }
-  }, [needsRedirect, router]);
-
-  // Pas connecté et pas sur /login : on affiche la page login inline
-  // (évite l'écran blanc pendant la navigation)
-  if (needsRedirect) {
+  // Non connecté → affiche directement la page login (pas de navigation)
+  if (!user) {
     return <LoginPageInline />;
   }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      {!isLoginPage && <Header />}
-      {!isLoginPage && <OfflineBanner />}
+      <Header />
+      <OfflineBanner />
       <main className="flex-1">
         <Outlet />
       </main>
@@ -329,26 +397,8 @@ function LoginPageInline() {
   const [showPwd, setShowPwd] = useState(false);
   const [error, setError] = useState("");
 
-  // Nettoie le localStorage corrompu (ex: ancienne clé avec admin123)
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem("thermotrack_users");
-      if (raw) {
-        const users = JSON.parse(raw);
-        // si le compte admin existe mais avec l'ancien mot de passe, on force le reset
-        const hasAdmin = users.some(
-          (u: any) => u.role === "admin" && u.password === "admin"
-        );
-        if (!hasAdmin) {
-          localStorage.removeItem("thermotrack_users");
-        }
-      }
-    } catch {
-      localStorage.removeItem("thermotrack_users");
-    }
-  }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     const u = username.trim();
@@ -358,7 +408,7 @@ function LoginPageInline() {
       return;
     }
     setLoading(true);
-    const ok = login(u, p);
+    const ok = await login(u, p);
     if (ok) {
       router.navigate({ to: "/" });
     } else {
@@ -515,12 +565,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <AuthProvider>
-          <AppShell />
-        </AuthProvider>
-        <Toaster position="top-right" richColors />
-      </ThemeProvider>
+      <AppShell />
     </QueryClientProvider>
   );
 }
