@@ -288,7 +288,7 @@ function HistoryPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-secondary/50">
-                {["Étuve", "Statut", "Demandeur", "Réalisateur", "Projet", "Type", "Section", "Couleur", "Début", "Fin"].map(h => (
+                {["Étuve", "Statut", "Demandeur", "Réalisateur", "Projet", "Type", "Section", "Couleur", "Début", "Fin", "Actions"].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">
                     {h}
                   </th>
