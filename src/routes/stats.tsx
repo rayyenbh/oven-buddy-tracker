@@ -246,7 +246,7 @@ function StatsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border">
-                {["#", "Four", "Opérations", "Heures totales", "Moy. / op.", "Charge relative"].map((h, i) => (
+                {["#", "Étuve", "Opérations", "Heures totales", "Moy. / op.", "Charge relative"].map((h, i) => (
                   <th key={h} className={`px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground ${i >= 2 && i <= 4 ? "text-right" : "text-left"}`}>
                     {h}
                   </th>
