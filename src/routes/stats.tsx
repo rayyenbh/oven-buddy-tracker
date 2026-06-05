@@ -239,7 +239,7 @@ function StatsPage() {
       {/* Summary table — pure HTML, always SSR-safe */}
       <div className="mt-4 rounded-xl border border-border bg-card p-5">
         <div className="mb-4">
-          <h3 className="text-sm font-semibold text-foreground">Récapitulatif par four</h3>
+          <h3 className="text-sm font-semibold text-foreground">Récapitulatif par étuve</h3>
           <p className="text-xs text-muted-foreground">Détail opérations et durée cumulée</p>
         </div>
         <div className="overflow-x-auto">
