@@ -208,10 +208,26 @@ function StatsPage() {
 
       {/* KPI Cards */}
       <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <KpiCard label="Opérations"    value={kpis.total}                         sub={`${kpis.completed} terminées`}              accent="primary" icon={<Activity className="h-5 w-5" />} />
-        <KpiCard label="Heures totales" value={`${Math.round(kpis.totalHours)}h`} sub={`moy. ${kpis.avgHours.toFixed(1)}h / op.`} accent="success" icon={<Clock className="h-5 w-5" />} />
-        <KpiCard label="Fours actifs"  value={`${kpis.ovensUsed} / ${kpis.totalOvens}`} sub="ont été utilisés"               accent="warning" icon={<Zap className="h-5 w-5" />} />
-        <KpiCard label="Taux couverture" value={`${kpis.utilRate}%`}              sub="du parc utilisé"                          accent="busy"    icon={<TrendingUp className="h-5 w-5" />}>
+        <KpiCard
+          label="Opérations" value={kpis.total} sub={`${kpis.completed} terminées`}
+          accent="primary" icon={<Activity className="h-5 w-5" />}
+          info="Nombre total d'opérations enregistrées dans la période sélectionnée (en cours + terminées)."
+        />
+        <KpiCard
+          label="Heures totales" value={`${Math.round(kpis.totalHours)}h`} sub={`moy. ${kpis.avgHours.toFixed(1)}h / op.`}
+          accent="success" icon={<Clock className="h-5 w-5" />}
+          info="Somme des durées de toutes les opérations de la période. Pour les opérations en cours, la durée est calculée jusqu'à maintenant."
+        />
+        <KpiCard
+          label="Étuves actives" value={`${kpis.ovensUsed} / ${kpis.totalOvens}`} sub="ont été utilisées"
+          accent="warning" icon={<Zap className="h-5 w-5" />}
+          info="Nombre d'étuves distinctes ayant accueilli au moins une opération dans la période, sur le total du parc."
+        />
+        <KpiCard
+          label="Taux couverture" value={`${kpis.utilRate}%`} sub="du parc utilisé"
+          accent="busy" icon={<TrendingUp className="h-5 w-5" />}
+          info="Pourcentage des étuves du parc ayant été utilisées au moins une fois dans la période."
+        >
           <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
             <div className="h-full rounded-full bg-busy transition-all duration-700" style={{ width: `${kpis.utilRate}%` }} />
           </div>
