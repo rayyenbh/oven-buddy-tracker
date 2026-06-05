@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchStats, fetchOvensWithActive, fetchHistory } from "@/lib/oven-queries";
 import type { StatsOperation } from "@/lib/oven-queries";
 import { exportCSV, exportPDF } from "@/lib/export";
-import { Download, FileText, TrendingUp, Clock, Activity, Zap } from "lucide-react";
+import { Download, FileText, TrendingUp, Clock, Activity, Zap, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 // Lazy-load the Recharts component so it is never evaluated on the server
