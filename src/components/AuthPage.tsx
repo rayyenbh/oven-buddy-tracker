@@ -37,7 +37,7 @@ export function AuthPage() {
           password,
           options: {
             emailRedirectTo: window.location.origin,
-            data: { full_name: fullName.trim() },
+            data: { full_name: fullName.trim(), requested_role: role },
           },
         });
         if (error) throw error;
