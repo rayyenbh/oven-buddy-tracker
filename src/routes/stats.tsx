@@ -227,12 +227,9 @@ function StatsPage() {
         <Suspense fallback={<ChartsSkeleton />}>
           <StatsCharts
             isLoading={isLoading}
-            timelineData={timelineData}
             statusData={statusData}
             perOvenData={perOvenData}
             radialData={radialData}
-            groupBy={groupBy}
-            setGroupBy={setGroupBy}
           />
         </Suspense>
       ) : (
