@@ -142,7 +142,12 @@ export function StatsCharts({ isLoading, statusData, perOvenData, radialData }: 
 
       {/* Row 2 : Bar charge + Radial */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <ChartCard title="Charge par four" subtitle="Nombre d'opérations — top 15" className="lg:col-span-2">
+        <ChartCard
+          title="Charge par étuve"
+          subtitle="Nombre d'opérations — top 15"
+          info="Classement des 15 étuves ayant accueilli le plus d'opérations sur la période. La longueur de la barre est proportionnelle au nombre d'opérations."
+          className="lg:col-span-2"
+        >
           {perOvenData.length === 0 ? <EmptyChart /> : (
             <ResponsiveContainer width="100%" height={Math.max(200, perOvenData.length * 28)}>
               <BarChart data={perOvenData} layout="vertical" margin={{ top: 0, right: 40, left: 10, bottom: 0 }} barSize={14}>
