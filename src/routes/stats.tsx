@@ -151,7 +151,7 @@ function StatsPage() {
           <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Analytique</p>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Statistiques & Reporting</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Performance du parc · {ovens.length} fours · {ops.length} opérations totales
+            Performance du parc · {ovens.length} étuves · {ops.length} opérations totales
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
