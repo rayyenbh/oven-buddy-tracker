@@ -53,23 +53,29 @@ function PlanificationPage() {
   const [openDialog, setOpenDialog] = useState(false);
   const [prefillDate, setPrefillDate] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<ReservationWithOven | null>(null);
+  const [kindFilter, setKindFilter] = useState<KindFilter>("all");
 
   const weekDates = useMemo(() => getWeekDates(weekRef), [weekRef]);
 
+  const filteredReservations = useMemo(() => {
+    if (kindFilter === "all") return reservations ?? [];
+    return (reservations ?? []).filter(r => (r as any).oven?.kind === kindFilter);
+  }, [reservations, kindFilter]);
+
   const byDate = useMemo(() => {
     const map = new Map<string, ReservationWithOven[]>();
-    (reservations ?? []).forEach(r => {
+    filteredReservations.forEach(r => {
       const key = r.date_debut;
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(r);
     });
     return map;
-  }, [reservations]);
+  }, [filteredReservations]);
 
   const upcomingReservations = useMemo(() => {
     const today = todayISO();
-    return (reservations ?? []).filter(r => r.date_debut >= today);
-  }, [reservations]);
+    return filteredReservations.filter(r => r.date_debut >= today);
+  }, [filteredReservations]);
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteReservation(id),
