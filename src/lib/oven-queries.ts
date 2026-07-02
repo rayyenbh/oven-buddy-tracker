@@ -130,13 +130,13 @@ export type StatsOperation = {
   status: "active" | "completed";
   ended_at: string | null;
   created_at: string;
-  oven: { id: string; internal_number: string; serial_number: string };
+  oven: { id: string; internal_number: string; serial_number: string; kind: EquipmentKind };
 };
 
 export async function fetchStats(): Promise<StatsOperation[]> {
   const { data, error } = await supabase
     .from("operations")
-    .select("id, oven_id, date_debut, heure_debut, date_fin, heure_fin, status, ended_at, created_at, oven:ovens(id, internal_number, serial_number)")
+    .select("id, oven_id, date_debut, heure_debut, date_fin, heure_fin, status, ended_at, created_at, oven:ovens(id, internal_number, serial_number, kind)")
     .order("created_at", { ascending: true });
   if (error) throw error;
   return (data ?? []) as any;
