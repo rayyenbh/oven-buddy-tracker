@@ -45,16 +45,26 @@ function Dashboard() {
     return () => { supabase.removeChannel(ch); };
   }, [qc]);
 
+  const kindCounts = useMemo(() => {
+    const arr = data ?? [];
+    return {
+      etuve: arr.filter((o) => o.kind === "etuve").length,
+      chambre_climatique: arr.filter((o) => o.kind === "chambre_climatique").length,
+    };
+  }, [data]);
+
+  const byKind = useMemo(() => (data ?? []).filter((o) => (kind ? o.kind === kind : true)), [data, kind]);
+
   const counts = useMemo(() => {
-    const total = data?.length ?? 0;
-    const busy = data?.filter((o) => o.active).length ?? 0;
+    const total = byKind.length;
+    const busy = byKind.filter((o) => o.active).length;
     const free = total - busy;
     const utilRate = total > 0 ? Math.round((busy / total) * 100) : 0;
     return { total, busy, free, utilRate };
-  }, [data]);
+  }, [byKind]);
 
   const filtered = useMemo(() => {
-    let arr = data ?? [];
+    let arr = byKind;
     if (filter === "free") arr = arr.filter((o) => !o.active);
     if (filter === "busy") arr = arr.filter((o) => o.active);
     if (search.trim()) {
@@ -68,7 +78,7 @@ function Dashboard() {
       );
     }
     return arr;
-  }, [data, filter, search]);
+  }, [byKind, filter, search]);
 
   const handleClick = (o: OvenWithActive) => {
     setSelected(o);
@@ -76,15 +86,51 @@ function Dashboard() {
     else setOpenStart(true);
   };
 
+  // Landing selector — choose between étuves and chambres climatiques
+  if (!kind) {
+    return (
+      <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
+        <div className="mb-10 text-center">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Tableau</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Que souhaitez-vous consulter&nbsp;?</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Choisissez le type d'équipement à suivre</p>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <KindChoiceCard
+            title="Étuves"
+            subtitle="Traitement thermique"
+            count={kindCounts.etuve}
+            icon={<Thermometer className="h-8 w-8" />}
+            accent="primary"
+            onClick={() => setKind("etuve")}
+          />
+          <KindChoiceCard
+            title="Chambres climatiques"
+            subtitle="Essais climatiques"
+            count={kindCounts.chambre_climatique}
+            icon={<CloudSun className="h-8 w-8" />}
+            accent="success"
+            onClick={() => setKind("chambre_climatique")}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       {/* Page header */}
       <div className="mb-8 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Vue d'ensemble</p>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Tableau des étuves</h1>
+          <button
+            onClick={() => setKind(null)}
+            className="mb-2 inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" /> Changer de type
+          </button>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Tableau des {KIND_LABEL[kind].toLowerCase()}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Disponibilité en temps réel · {counts.total} étuves de traitement thermique
+            Disponibilité en temps réel · {counts.total} {KIND_LABEL[kind].toLowerCase()}
           </p>
         </div>
         <div className="mt-2 flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 sm:mt-0">
