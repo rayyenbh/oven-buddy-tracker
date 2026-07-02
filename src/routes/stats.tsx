@@ -90,14 +90,17 @@ function StatsPage() {
   });
 
   const [period, setPeriod]   = useState<Period>("30j");
+  const [kindFilter, setKindFilter] = useState<KindFilter>("all");
 
   const filtered = useMemo(() => {
+    let arr = ops;
+    if (kindFilter !== "all") arr = arr.filter(o => o.oven?.kind === kindFilter);
     const days = PERIOD_DAYS[period];
-    if (!days) return ops;
+    if (!days) return arr;
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
-    return ops.filter(o => new Date(o.created_at) >= cutoff);
-  }, [ops, period]);
+    return arr.filter(o => new Date(o.created_at) >= cutoff);
+  }, [ops, period, kindFilter]);
 
   const kpis = useMemo(() => {
     const total      = filtered.length;
