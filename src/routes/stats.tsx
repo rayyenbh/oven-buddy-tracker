@@ -181,6 +181,11 @@ function StatsPage() {
         </div>
       </div>
 
+      {/* Kind filter */}
+      <div className="mb-3">
+        <KindTabs value={kindFilter} onChange={setKindFilter} />
+      </div>
+
       {/* Period selector */}
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="inline-flex rounded-xl border border-border bg-card p-1 gap-1">
