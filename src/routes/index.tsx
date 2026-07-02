@@ -2,11 +2,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchOvensWithActive, type OvenWithActive } from "@/lib/oven-queries";
+import { fetchOvensWithActive, type OvenWithActive, type EquipmentKind } from "@/lib/oven-queries";
+import { KIND_LABEL } from "@/lib/kind";
 import { OvenCard } from "@/components/OvenCard";
 import { StartOperationDialog } from "@/components/StartOperationDialog";
 import { OvenDetailsDialog } from "@/components/OvenDetailsDialog";
 import { Input } from "@/components/ui/input";
+import { ArrowLeft, Thermometer, CloudSun } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: Dashboard,
