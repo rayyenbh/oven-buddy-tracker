@@ -3,6 +3,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchOvensWithActive, fetchReservations, createReservation, deleteReservation, addHoursToDateTime } from "@/lib/oven-queries";
 import type { ReservationWithOven } from "@/lib/oven-queries";
+import { KindTabs, type KindFilter } from "@/lib/kind";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
