@@ -137,6 +137,7 @@ export type Database = {
           created_at: string
           id: string
           internal_number: string
+          kind: Database["public"]["Enums"]["equipment_kind"]
           position: number
           serial_number: string
           updated_at: string
@@ -145,6 +146,7 @@ export type Database = {
           created_at?: string
           id?: string
           internal_number: string
+          kind?: Database["public"]["Enums"]["equipment_kind"]
           position: number
           serial_number: string
           updated_at?: string
@@ -153,6 +155,7 @@ export type Database = {
           created_at?: string
           id?: string
           internal_number?: string
+          kind?: Database["public"]["Enums"]["equipment_kind"]
           position?: number
           serial_number?: string
           updated_at?: string
@@ -272,6 +275,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "technicien"
+      equipment_kind: "etuve" | "chambre_climatique"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -400,6 +404,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "technicien"],
+      equipment_kind: ["etuve", "chambre_climatique"],
     },
   },
 } as const
