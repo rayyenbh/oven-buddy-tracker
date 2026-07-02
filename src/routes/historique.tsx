@@ -24,6 +24,7 @@ function HistoryPage() {
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "completed">("all");
+  const [kindFilter, setKindFilter] = useState<KindFilter>("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [operatorFilter, setOperatorFilter] = useState("");
