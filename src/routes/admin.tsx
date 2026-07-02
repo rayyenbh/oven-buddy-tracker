@@ -50,9 +50,10 @@ function AdminPage() {
   });
 
   const [edits, setEdits] = useState<Record<string, { serial_number: string; internal_number: string }>>({});
-  const [newOven, setNewOven] = useState({ internal_number: "", serial_number: "" });
+  const [newOven, setNewOven] = useState<{ internal_number: string; serial_number: string; kind: EquipmentKind }>({ internal_number: "", serial_number: "", kind: "etuve" });
   const [toDelete, setToDelete] = useState<Oven | null>(null);
   const [search, setSearch] = useState("");
+  const [kindFilter, setKindFilter] = useState<KindFilter>("all");
   const [page, setPage] = useState(1);
 
   useEffect(() => {
@@ -65,10 +66,14 @@ function AdminPage() {
 
   const filtered = useMemo(() => {
     if (!data) return [];
-    if (!search.trim()) return data;
-    const q = search.toLowerCase();
-    return data.filter(o => o.internal_number.toLowerCase().includes(q) || o.serial_number.toLowerCase().includes(q));
-  }, [data, search]);
+    let arr = data;
+    if (kindFilter !== "all") arr = arr.filter(o => o.kind === kindFilter);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      arr = arr.filter(o => o.internal_number.toLowerCase().includes(q) || o.serial_number.toLowerCase().includes(q));
+    }
+    return arr;
+  }, [data, search, kindFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
