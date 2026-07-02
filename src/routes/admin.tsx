@@ -131,9 +131,9 @@ function AdminPage() {
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
       <div className="mb-8">
         <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Configuration</p>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">Administration des étuves</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Administration des équipements</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Gérez le parc d'étuves · Numéro interne (ex: RD 112) · Numéro de série (ex: B621.0021)
+          Gérez le parc d'étuves et de chambres climatiques · Numéro interne (ex: RD 112) · Numéro de série (ex: B621.0021)
         </p>
       </div>
 
@@ -142,7 +142,23 @@ function AdminPage() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15">
             <Plus className="h-4 w-4 text-primary" />
           </div>
-          <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Ajouter une étuve</h2>
+          <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Ajouter un équipement</h2>
+        </div>
+        <div className="mb-3 flex gap-2">
+          {(["etuve", "chambre_climatique"] as EquipmentKind[]).map((k) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setNewOven((x) => ({ ...x, kind: k }))}
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-all border ${
+                newOven.kind === k
+                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                  : "border-border text-muted-foreground hover:text-foreground hover:bg-secondary"
+              }`}
+            >
+              {KIND_LABEL_SINGULAR[k]}
+            </button>
+          ))}
         </div>
         <div className="flex flex-col gap-3 sm:flex-row">
           <Input className="font-mono bg-secondary/50 border-border" placeholder="Numéro interne (RD 112)" value={newOven.internal_number} onChange={(e) => setNewOven((x) => ({ ...x, internal_number: e.target.value }))} />
@@ -153,9 +169,13 @@ function AdminPage() {
         </div>
       </div>
 
+      <div className="mb-4">
+        <KindTabs value={kindFilter} onChange={(v) => { setKindFilter(v); setPage(1); }} />
+      </div>
+
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <span className="text-sm text-muted-foreground">
-          {isLoading ? "…" : `${filtered.length} étuve${filtered.length > 1 ? "s" : ""}${search ? " trouvée(s)" : " enregistrée(s)"}`}
+          {isLoading ? "…" : `${filtered.length} équipement${filtered.length > 1 ? "s" : ""}${search || kindFilter !== "all" ? " trouvé(s)" : " enregistré(s)"}`}
         </span>
         <div className="relative sm:w-64 w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -168,6 +188,7 @@ function AdminPage() {
           <thead>
             <tr className="border-b border-border bg-secondary/50">
               <th className="w-12 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">#</th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Type</th>
               <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Numéro interne</th>
               <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Numéro de série</th>
               <th className="w-48 px-4 py-3" />
@@ -178,17 +199,25 @@ function AdminPage() {
               Array.from({ length: 10 }).map((_, i) => (
                 <tr key={i} className="border-b border-border/50">
                   <td className="px-4 py-3"><div className="h-4 w-6 animate-shimmer rounded" /></td>
+                  <td className="px-4 py-3"><div className="h-4 w-20 animate-shimmer rounded" /></td>
                   <td className="px-4 py-3"><div className="h-8 animate-shimmer rounded-lg" /></td>
                   <td className="px-4 py-3"><div className="h-8 animate-shimmer rounded-lg" /></td>
                   <td className="px-4 py-3"><div className="h-8 w-36 animate-shimmer rounded-lg" /></td>
                 </tr>
               ))
             ) : paginated.length === 0 ? (
-              <tr><td colSpan={4} className="px-4 py-16 text-center text-sm text-muted-foreground">Aucune étuve</td></tr>
+              <tr><td colSpan={5} className="px-4 py-16 text-center text-sm text-muted-foreground">Aucun équipement</td></tr>
             ) : (
               paginated.map((o, idx) => (
                 <tr key={o.id} className={`border-b border-border/40 transition-colors hover:bg-secondary/20 ${idx % 2 === 0 ? "" : "bg-secondary/10"}`}>
                   <td className="px-4 py-3 font-mono text-sm font-bold text-muted-foreground">{o.position}</td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
+                      o.kind === "etuve" ? "bg-primary/15 text-primary" : "bg-success/15 text-success"
+                    }`}>
+                      {KIND_LABEL_SINGULAR[o.kind]}
+                    </span>
+                  </td>
                   <td className="px-4 py-2.5">
                     <Input className="font-mono bg-transparent border-transparent hover:border-border focus:border-primary focus:bg-secondary/30 transition-all" value={edits[o.id]?.internal_number ?? ""} onChange={(e) => setEdits((x) => ({ ...x, [o.id]: { ...x[o.id], internal_number: e.target.value } }))} />
                   </td>
