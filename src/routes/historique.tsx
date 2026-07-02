@@ -59,6 +59,7 @@ function HistoryPage() {
 
   const filtered = useMemo(() => {
     let arr = data ?? [];
+    if (kindFilter !== "all") arr = arr.filter(o => (o as any).oven?.kind === kindFilter);
     if (statusFilter !== "all") arr = arr.filter(o => o.status === statusFilter);
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -81,7 +82,7 @@ function HistoryPage() {
     }
     if (typeFilter) arr = arr.filter(o => o.type === typeFilter);
     return arr;
-  }, [data, search, statusFilter, dateFrom, dateTo, operatorFilter, typeFilter]);
+  }, [data, search, statusFilter, kindFilter, dateFrom, dateTo, operatorFilter, typeFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
