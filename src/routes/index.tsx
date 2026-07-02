@@ -145,7 +145,7 @@ function Dashboard() {
       {/* KPI cards */}
       <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <KpiCard
-          label="Total étuves"
+          label={`Total ${KIND_LABEL[kind].toLowerCase()}`}
           value={counts.total}
           icon={<IconFours />}
           accent="primary"
