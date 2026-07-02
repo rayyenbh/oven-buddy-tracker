@@ -24,6 +24,7 @@ function Dashboard() {
     refetchInterval: 60_000,
   });
 
+  const [kind, setKind] = useState<EquipmentKind | null>(null);
   const [selected, setSelected] = useState<OvenWithActive | null>(null);
   const [openStart, setOpenStart] = useState(false);
   const [openDetails, setOpenDetails] = useState(false);
