@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchHistory } from "@/lib/oven-queries";
+import { KindTabs, type KindFilter } from "@/lib/kind";
 import { exportCSV, exportPDF } from "@/lib/export";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ function HistoryPage() {
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "completed">("all");
+  const [kindFilter, setKindFilter] = useState<KindFilter>("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [operatorFilter, setOperatorFilter] = useState("");
@@ -57,6 +59,7 @@ function HistoryPage() {
 
   const filtered = useMemo(() => {
     let arr = data ?? [];
+    if (kindFilter !== "all") arr = arr.filter(o => (o as any).oven?.kind === kindFilter);
     if (statusFilter !== "all") arr = arr.filter(o => o.status === statusFilter);
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -79,7 +82,7 @@ function HistoryPage() {
     }
     if (typeFilter) arr = arr.filter(o => o.type === typeFilter);
     return arr;
-  }, [data, search, statusFilter, dateFrom, dateTo, operatorFilter, typeFilter]);
+  }, [data, search, statusFilter, kindFilter, dateFrom, dateTo, operatorFilter, typeFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
@@ -141,6 +144,11 @@ function HistoryPage() {
         <MiniStat label="Total" value={counts.total} color="text-foreground" />
         <MiniStat label="En cours" value={counts.active} color="text-busy" />
         <MiniStat label="Terminées" value={counts.completed} color="text-success" />
+      </div>
+
+      {/* Kind filter tabs */}
+      <div className="mb-3">
+        <KindTabs value={kindFilter} onChange={(v) => handleFilterChange(() => setKindFilter(v))} />
       </div>
 
       {/* Status tabs + search row */}

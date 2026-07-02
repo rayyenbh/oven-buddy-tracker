@@ -3,6 +3,7 @@ import { useMemo, useState, useEffect, lazy, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchStats, fetchOvensWithActive, fetchHistory } from "@/lib/oven-queries";
 import type { StatsOperation } from "@/lib/oven-queries";
+import { KindTabs, type KindFilter } from "@/lib/kind";
 import { exportCSV, exportPDF } from "@/lib/export";
 import { Download, FileText, TrendingUp, Clock, Activity, Zap, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -89,14 +90,22 @@ function StatsPage() {
   });
 
   const [period, setPeriod]   = useState<Period>("30j");
+  const [kindFilter, setKindFilter] = useState<KindFilter>("all");
 
   const filtered = useMemo(() => {
+    let arr = ops;
+    if (kindFilter !== "all") arr = arr.filter(o => o.oven?.kind === kindFilter);
     const days = PERIOD_DAYS[period];
-    if (!days) return ops;
+    if (!days) return arr;
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
-    return ops.filter(o => new Date(o.created_at) >= cutoff);
-  }, [ops, period]);
+    return arr.filter(o => new Date(o.created_at) >= cutoff);
+  }, [ops, period, kindFilter]);
+
+  const filteredOvens = useMemo(
+    () => kindFilter === "all" ? ovens : ovens.filter(o => o.kind === kindFilter),
+    [ovens, kindFilter],
+  );
 
   const kpis = useMemo(() => {
     const total      = filtered.length;
@@ -104,10 +113,10 @@ function StatsPage() {
     const totalHours = filtered.reduce((acc, o) => acc + durationHours(o), 0);
     const avgHours   = total > 0 ? totalHours / total : 0;
     const ovensUsed  = new Set(filtered.map(o => o.oven_id)).size;
-    const totalOvens = ovens.length;
+    const totalOvens = filteredOvens.length;
     const utilRate   = totalOvens > 0 ? Math.round((ovensUsed / totalOvens) * 100) : 0;
     return { total, completed, totalHours, avgHours, ovensUsed, totalOvens, utilRate };
-  }, [filtered, ovens]);
+  }, [filtered, filteredOvens]);
 
   const perOvenData = useMemo(() => {
     const map = new Map<string, { label: string; ops: number; heures: number }>();
@@ -170,6 +179,11 @@ function StatsPage() {
             <FileText className="h-3.5 w-3.5" /> PDF
           </Button>
         </div>
+      </div>
+
+      {/* Kind filter */}
+      <div className="mb-3">
+        <KindTabs value={kindFilter} onChange={setKindFilter} />
       </div>
 
       {/* Period selector */}

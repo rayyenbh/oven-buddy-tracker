@@ -3,6 +3,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchOvensWithActive, fetchReservations, createReservation, deleteReservation, addHoursToDateTime } from "@/lib/oven-queries";
 import type { ReservationWithOven } from "@/lib/oven-queries";
+import { KindTabs, type KindFilter } from "@/lib/kind";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,23 +53,29 @@ function PlanificationPage() {
   const [openDialog, setOpenDialog] = useState(false);
   const [prefillDate, setPrefillDate] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<ReservationWithOven | null>(null);
+  const [kindFilter, setKindFilter] = useState<KindFilter>("all");
 
   const weekDates = useMemo(() => getWeekDates(weekRef), [weekRef]);
 
+  const filteredReservations = useMemo(() => {
+    if (kindFilter === "all") return reservations ?? [];
+    return (reservations ?? []).filter(r => (r as any).oven?.kind === kindFilter);
+  }, [reservations, kindFilter]);
+
   const byDate = useMemo(() => {
     const map = new Map<string, ReservationWithOven[]>();
-    (reservations ?? []).forEach(r => {
+    filteredReservations.forEach(r => {
       const key = r.date_debut;
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(r);
     });
     return map;
-  }, [reservations]);
+  }, [filteredReservations]);
 
   const upcomingReservations = useMemo(() => {
     const today = todayISO();
-    return (reservations ?? []).filter(r => r.date_debut >= today);
-  }, [reservations]);
+    return filteredReservations.filter(r => r.date_debut >= today);
+  }, [filteredReservations]);
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteReservation(id),
@@ -97,6 +104,10 @@ function PlanificationPage() {
           <Plus className="h-4 w-4" />
           Nouvelle réservation
         </Button>
+      </div>
+
+      <div className="mb-4">
+        <KindTabs value={kindFilter} onChange={setKindFilter} />
       </div>
 
       <div className="mb-4 flex items-center gap-3">
