@@ -3,6 +3,7 @@ import { useMemo, useState, useEffect, lazy, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchStats, fetchOvensWithActive, fetchHistory } from "@/lib/oven-queries";
 import type { StatsOperation } from "@/lib/oven-queries";
+import { KindTabs, type KindFilter } from "@/lib/kind";
 import { exportCSV, exportPDF } from "@/lib/export";
 import { Download, FileText, TrendingUp, Clock, Activity, Zap, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
