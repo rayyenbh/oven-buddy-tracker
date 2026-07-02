@@ -104,10 +104,10 @@ function AdminPage() {
       const serial = newOven.serial_number.trim();
       if (!internal || !serial) throw new Error("Champs requis");
       const maxPos = (data ?? []).reduce((m, o) => Math.max(m, o.position), 0);
-      const { error } = await supabase.from("ovens").insert({ internal_number: internal, serial_number: serial, position: maxPos + 1 });
+      const { error } = await supabase.from("ovens").insert({ internal_number: internal, serial_number: serial, kind: newOven.kind, position: maxPos + 1 });
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Étuve ajoutée"); setNewOven({ internal_number: "", serial_number: "" }); invalidate(); },
+    onSuccess: () => { toast.success(`${KIND_LABEL_SINGULAR[newOven.kind]} ajoutée`); setNewOven({ internal_number: "", serial_number: "", kind: newOven.kind }); invalidate(); },
     onError: (e: any) => toast.error(e.message ?? "Erreur"),
   });
 
