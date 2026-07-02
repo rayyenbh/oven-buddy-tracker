@@ -1,11 +1,14 @@
 import { supabase } from "@/integrations/supabase/client";
 import { cacheData, getCachedData, isOnline } from "./offline-db";
 
+export type EquipmentKind = "etuve" | "chambre_climatique";
+
 export type Oven = {
   id: string;
   position: number;
   serial_number: string;
   internal_number: string;
+  kind: EquipmentKind;
 };
 
 export type Cable = {
