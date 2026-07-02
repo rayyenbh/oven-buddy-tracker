@@ -106,6 +106,10 @@ function PlanificationPage() {
         </Button>
       </div>
 
+      <div className="mb-4">
+        <KindTabs value={kindFilter} onChange={setKindFilter} />
+      </div>
+
       <div className="mb-4 flex items-center gap-3">
         <Button variant="outline" size="sm" className="h-8 w-8 p-0 border-border" onClick={() => { const d = new Date(weekRef); d.setDate(d.getDate() - 7); setWeekRef(d); }}>
           <ChevronLeft className="h-4 w-4" />
