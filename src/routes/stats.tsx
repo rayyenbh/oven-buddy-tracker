@@ -102,16 +102,21 @@ function StatsPage() {
     return arr.filter(o => new Date(o.created_at) >= cutoff);
   }, [ops, period, kindFilter]);
 
+  const filteredOvens = useMemo(
+    () => kindFilter === "all" ? ovens : ovens.filter(o => o.kind === kindFilter),
+    [ovens, kindFilter],
+  );
+
   const kpis = useMemo(() => {
     const total      = filtered.length;
     const completed  = filtered.filter(o => o.status === "completed").length;
     const totalHours = filtered.reduce((acc, o) => acc + durationHours(o), 0);
     const avgHours   = total > 0 ? totalHours / total : 0;
     const ovensUsed  = new Set(filtered.map(o => o.oven_id)).size;
-    const totalOvens = ovens.length;
+    const totalOvens = filteredOvens.length;
     const utilRate   = totalOvens > 0 ? Math.round((ovensUsed / totalOvens) * 100) : 0;
     return { total, completed, totalHours, avgHours, ovensUsed, totalOvens, utilRate };
-  }, [filtered, ovens]);
+  }, [filtered, filteredOvens]);
 
   const perOvenData = useMemo(() => {
     const map = new Map<string, { label: string; ops: number; heures: number }>();
