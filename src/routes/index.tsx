@@ -302,3 +302,37 @@ function IconBusy() {
 function IconRate() {
   return <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"/></svg>;
 }
+
+function KindChoiceCard({
+  title, subtitle, count, icon, accent, onClick,
+}: {
+  title: string;
+  subtitle: string;
+  count: number;
+  icon: React.ReactNode;
+  accent: "primary" | "success";
+  onClick: () => void;
+}) {
+  const accentCls = accent === "primary"
+    ? "text-primary bg-primary/10 group-hover:bg-primary/20"
+    : "text-success bg-success/10 group-hover:bg-success/20";
+  const glow = accent === "primary" ? "group-hover:glow-primary" : "";
+  return (
+    <button
+      onClick={onClick}
+      className={`group flex flex-col items-start gap-5 rounded-2xl border border-border bg-card p-8 text-left transition-all hover:border-primary/40 hover:-translate-y-0.5 ${glow}`}
+    >
+      <div className={`flex h-16 w-16 items-center justify-center rounded-2xl transition-colors ${accentCls}`}>
+        {icon}
+      </div>
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight text-foreground">{title}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
+      </div>
+      <div className="mt-auto flex w-full items-center justify-between border-t border-border/50 pt-4">
+        <span className="text-xs uppercase tracking-wider text-muted-foreground">Équipements</span>
+        <span className="font-mono text-2xl font-bold text-foreground">{count}</span>
+      </div>
+    </button>
+  );
+}
