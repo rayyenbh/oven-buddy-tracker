@@ -146,6 +146,11 @@ function HistoryPage() {
         <MiniStat label="Terminées" value={counts.completed} color="text-success" />
       </div>
 
+      {/* Kind filter tabs */}
+      <div className="mb-3">
+        <KindTabs value={kindFilter} onChange={(v) => handleFilterChange(() => setKindFilter(v))} />
+      </div>
+
       {/* Status tabs + search row */}
       <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="inline-flex rounded-xl border border-border bg-card p-1 gap-1">
