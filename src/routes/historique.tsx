@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchHistory } from "@/lib/oven-queries";
+import { KindTabs, type KindFilter } from "@/lib/kind";
 import { exportCSV, exportPDF } from "@/lib/export";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
