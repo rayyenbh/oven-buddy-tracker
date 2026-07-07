@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { type OvenWithActive, addHoursToDateTime } from "@/lib/oven-queries";
+import { type OvenWithActive, addHoursToDateTime, findOvenScheduleConflicts } from "@/lib/oven-queries";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -49,10 +49,13 @@ export function StartOperationDialog({
   const [notes, setNotes] = useState("");
   const [cables, setCables] = useState<CableInput[]>([emptyCable()]);
 
-  // Pre-fill demandeur from connected user
+  // Pre-fill demandeur/réalisateur from connected user
   useEffect(() => {
-    if (open && fullName && !demandeur) setDemandeur(fullName);
-  }, [open, fullName, demandeur]);
+    if (open && fullName) {
+      if (!demandeur) setDemandeur(fullName);
+      if (!realisateur) setRealisateur(fullName);
+    }
+  }, [open, fullName, demandeur, realisateur]);
 
   const computedEnd = useMemo(() => {
     if (endMode === "manuel") {
@@ -70,7 +73,7 @@ export function StartOperationDialog({
 
   const reset = () => {
     setDemandeur(fullName || "");
-    setRealisateur(""); setProjet(""); setCdc(""); setEssai("");
+    setRealisateur(fullName || ""); setProjet(""); setCdc(""); setEssai("");
     setSpecification(""); setTemperature("");
     setDateDebut(todayISO()); setHeureDebut(nowHM());
     setEndMode("duree"); setDureeHeures("");
@@ -117,6 +120,16 @@ export function StartOperationDialog({
       const startMs = new Date(`${dateDebut}T${heureDebut}:00`).getTime();
       const endMs = new Date(`${end.date}T${end.time}:00`).getTime();
       const durationHours = endMode === "duree" ? parseFloat(dureeHeures) : (endMs - startMs) / 3_600_000;
+      const conflicts = await findOvenScheduleConflicts({
+        ovenId: oven!.id,
+        startDate: dateDebut,
+        startTime: heureDebut,
+        endDate: end.date,
+        endTime: end.time,
+      });
+      if (conflicts.length > 0) {
+        throw new Error("Conflit de planning : une autre opération ou réservation est déjà prévue sur cette étuve pendant cette plage." );
+      }
       const { data: op, error: oErr } = await supabase.from("operations").insert({
         oven_id: oven!.id,
         demandeur: demandeur.trim(),
@@ -197,7 +210,7 @@ export function StartOperationDialog({
           <Section title="Intervenants" color="primary">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="Demandeur" required value={demandeur} onChange={setDemandeur} placeholder="Nom du demandeur" />
-              <Field label="Réalisateur" required value={realisateur} onChange={setRealisateur} placeholder="Nom du réalisateur" />
+              <Field label="Réalisateur" required value={realisateur} onChange={setRealisateur} placeholder="Nom du réalisateur" readOnly />
             </div>
           </Section>
 
@@ -378,7 +391,7 @@ function Section({
 }
 
 function Field({
-  label, required, type = "text", value, onChange, placeholder, step,
+  label, required, type = "text", value, onChange, placeholder, step, readOnly = false,
 }: {
   label: string;
   required?: boolean;
@@ -387,6 +400,7 @@ function Field({
   onChange: (v: string) => void;
   placeholder?: string;
   step?: string;
+  readOnly?: boolean;
 }) {
   return (
     <div className="space-y-1">
@@ -399,8 +413,9 @@ function Field({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        readOnly={readOnly}
         maxLength={type === "text" ? 200 : undefined}
-        className="bg-secondary/30 border-border"
+        className={`bg-secondary/30 border-border ${readOnly ? "bg-secondary/20 opacity-90" : ""}`}
       />
     </div>
   );

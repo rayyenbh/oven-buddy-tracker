@@ -111,6 +111,19 @@ export async function fetchReservations(): Promise<ReservationWithOven[]> {
 }
 
 export async function createReservation(payload: Omit<Reservation, "id" | "created_at">): Promise<void> {
+  const conflicts = await findOvenScheduleConflicts({
+    ovenId: payload.oven_id,
+    startDate: payload.date_debut,
+    startTime: payload.heure_debut,
+    endDate: payload.date_fin,
+    endTime: payload.heure_fin,
+  });
+
+  if (conflicts.length > 0) {
+    const conflict = conflicts[0];
+    throw new Error(`Conflit de planning : ${conflict.source === "operation" ? "une opération" : "une réservation"} existe déjà sur cette étuve à cette période.`);
+  }
+
   const { error } = await supabase.from("reservations").insert(payload as any);
   if (error) throw error;
 }
@@ -133,6 +146,15 @@ export type StatsOperation = {
   oven: { id: string; internal_number: string; serial_number: string; kind: EquipmentKind };
 };
 
+export type ScheduleConflict = {
+  source: "operation" | "reservation";
+  id: string;
+  date_debut: string;
+  heure_debut: string;
+  date_fin: string | null;
+  heure_fin: string | null;
+};
+
 export async function fetchStats(): Promise<StatsOperation[]> {
   const { data, error } = await supabase
     .from("operations")
@@ -140,6 +162,59 @@ export async function fetchStats(): Promise<StatsOperation[]> {
     .order("created_at", { ascending: true });
   if (error) throw error;
   return (data ?? []) as any;
+}
+
+function parseDateTime(dateISO: string, timeHM: string): Date | null {
+  try {
+    return new Date(`${dateISO}T${timeHM}:00`);
+  } catch {
+    return null;
+  }
+}
+
+function hasOverlappingRange(startA: Date, endA: Date, startB: Date, endB: Date): boolean {
+  return startA < endB && endA > startB;
+}
+
+export async function findOvenScheduleConflicts({
+  ovenId,
+  startDate,
+  startTime,
+  endDate,
+  endTime,
+}: {
+  ovenId: string;
+  startDate: string;
+  startTime: string;
+  endDate: string;
+  endTime: string;
+}): Promise<ScheduleConflict[]> {
+  const start = parseDateTime(startDate, startTime);
+  const end = parseDateTime(endDate, endTime);
+  if (!start || !end || end.getTime() <= start.getTime()) return [];
+
+  const [{ data: operations, error: opErr }, { data: reservations, error: resErr }] = await Promise.all([
+    supabase.from("operations").select("id, date_debut, heure_debut, date_fin, heure_fin").eq("oven_id", ovenId),
+    supabase.from("reservations").select("id, date_debut, heure_debut, date_fin, heure_fin").eq("oven_id", ovenId),
+  ]);
+
+  if (opErr) throw opErr;
+  if (resErr) throw resErr;
+
+  const conflicts: ScheduleConflict[] = [];
+  const push = (source: ScheduleConflict["source"], item: any) => {
+    if (!item?.date_debut || !item?.heure_debut || !item?.date_fin || !item?.heure_fin) return;
+    const itemStart = parseDateTime(item.date_debut, item.heure_debut);
+    const itemEnd = parseDateTime(item.date_fin, item.heure_fin);
+    if (!itemStart || !itemEnd || itemEnd.getTime() <= itemStart.getTime()) return;
+    if (hasOverlappingRange(start, end, itemStart, itemEnd)) {
+      conflicts.push({ source, id: item.id, date_debut: item.date_debut, heure_debut: item.heure_debut, date_fin: item.date_fin, heure_fin: item.heure_fin });
+    }
+  };
+
+  (operations ?? []).forEach((item: any) => push("operation", item));
+  (reservations ?? []).forEach((item: any) => push("reservation", item));
+  return conflicts;
 }
 
 /** Add `hours` (decimal allowed) to a date+time string. Returns { date, time } in ISO format. */

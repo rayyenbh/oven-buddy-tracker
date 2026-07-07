@@ -26,6 +26,26 @@ function useIsClient() {
 
 type Period = "7j" | "30j" | "90j" | "365j" | "tout";
 
+function parseOperationDateTime(date: string | null | undefined, time: string | null | undefined): Date | null {
+  if (!date || !time) return null;
+  try {
+    return new Date(`${date}T${time}:00`);
+  } catch {
+    return null;
+  }
+}
+
+function operationInRange(op: { date_debut: string; heure_debut: string; date_fin: string | null; heure_fin: string | null }, dateFrom: string, dateTo: string): boolean {
+  const start = parseOperationDateTime(op.date_debut, op.heure_debut);
+  const end = parseOperationDateTime(op.date_fin ?? op.date_debut, op.heure_fin ?? op.heure_debut);
+  if (!start || !end) return false;
+  const from = dateFrom ? new Date(`${dateFrom}T00:00:00`) : null;
+  const to = dateTo ? new Date(`${dateTo}T23:59:59`) : null;
+  if (from && end < from) return false;
+  if (to && start > to) return false;
+  return true;
+}
+
 const PERIOD_DAYS: Record<Period, number | null> = {
   "7j": 7, "30j": 30, "90j": 90, "365j": 365, "tout": null,
 };
@@ -91,16 +111,21 @@ function StatsPage() {
 
   const [period, setPeriod]   = useState<Period>("30j");
   const [kindFilter, setKindFilter] = useState<KindFilter>("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
   const filtered = useMemo(() => {
     let arr = ops;
     if (kindFilter !== "all") arr = arr.filter(o => o.oven?.kind === kindFilter);
+    if (dateFrom || dateTo) {
+      return arr.filter(o => operationInRange(o, dateFrom, dateTo));
+    }
     const days = PERIOD_DAYS[period];
     if (!days) return arr;
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
     return arr.filter(o => new Date(o.created_at) >= cutoff);
-  }, [ops, period, kindFilter]);
+  }, [ops, period, kindFilter, dateFrom, dateTo]);
 
   const filteredOvens = useMemo(
     () => kindFilter === "all" ? ovens : ovens.filter(o => o.kind === kindFilter),
@@ -187,7 +212,7 @@ function StatsPage() {
       </div>
 
       {/* Period selector */}
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="inline-flex rounded-xl border border-border bg-card p-1 gap-1">
           {(["7j", "30j", "90j", "365j", "tout"] as Period[]).map(p => (
             <button
@@ -206,6 +231,30 @@ function StatsPage() {
         <p className="text-xs text-muted-foreground font-mono">
           {filtered.length} opération{filtered.length !== 1 ? "s" : ""} dans la période
         </p>
+      </div>
+
+      <div className="mb-6 rounded-xl border border-border bg-card p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Plage personnalisée</p>
+            <p className="mt-1 text-sm text-muted-foreground">Sélectionnez une plage de dates pour filtrer les opérations.</p>
+          </div>
+          {(dateFrom || dateTo) && (
+            <Button variant="ghost" size="sm" onClick={() => { setDateFrom(""); setDateTo(""); }}>
+              Effacer
+            </Button>
+          )}
+        </div>
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Depuis</label>
+            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-full rounded-md border border-border bg-secondary/30 px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Jusqu&apos;au</label>
+            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-full rounded-md border border-border bg-secondary/30 px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40" />
+          </div>
+        </div>
       </div>
 
       {/* KPI Cards */}

@@ -10,6 +10,26 @@ import { ChevronLeft, ChevronRight, Download, FileText, X } from "lucide-react";
 
 const PAGE_SIZE = 20;
 
+function parseOperationDateTime(date: string | null | undefined, time: string | null | undefined): Date | null {
+  if (!date || !time) return null;
+  try {
+    return new Date(`${date}T${time}:00`);
+  } catch {
+    return null;
+  }
+}
+
+function operationInRange(op: { date_debut: string; heure_debut: string; date_fin: string | null; heure_fin: string | null }, dateFrom: string, dateTo: string): boolean {
+  const start = parseOperationDateTime(op.date_debut, op.heure_debut);
+  const end = parseOperationDateTime(op.date_fin ?? op.date_debut, op.heure_fin ?? op.heure_debut);
+  if (!start || !end) return false;
+  const from = dateFrom ? new Date(`${dateFrom}T00:00:00`) : null;
+  const to = dateTo ? new Date(`${dateTo}T23:59:59`) : null;
+  if (from && end < from) return false;
+  if (to && start > to) return false;
+  return true;
+}
+
 export const Route = createFileRoute("/historique")({
   component: HistoryPage,
   head: () => ({ meta: [{ title: "Historique — ThermoTrack" }] }),
@@ -71,8 +91,7 @@ function HistoryPage() {
         o.projet?.toLowerCase().includes(q)
       );
     }
-    if (dateFrom) arr = arr.filter(o => o.date_debut >= dateFrom);
-    if (dateTo)   arr = arr.filter(o => o.date_debut <= dateTo);
+    if (dateFrom || dateTo) arr = arr.filter(o => operationInRange(o, dateFrom, dateTo));
     if (operatorFilter) {
       const q = operatorFilter.toLowerCase();
       arr = arr.filter(o =>

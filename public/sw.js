@@ -1,4 +1,4 @@
-const CACHE_NAME = "thermotrack-v1";
+const CACHE_NAME = "thermotrack-v2";
 const STATIC_ASSETS = ["/", "/historique", "/planification", "/admin"];
 
 self.addEventListener("install", (event) => {

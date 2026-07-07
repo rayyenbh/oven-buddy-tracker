@@ -29,8 +29,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       supabase.from("profiles").select("full_name, email").eq("id", uid).maybeSingle(),
     ]);
     const roles = (roleRows ?? []).map((r) => r.role as AppRole);
-    setRole(roles.includes("admin") ? "admin" : roles.includes("technicien") ? "technicien" : null);
-    setFullName(profile?.full_name || profile?.email || "");
+    const metadataRole = (session?.user?.user_metadata?.requested_role ?? session?.user?.app_metadata?.role) as AppRole | undefined;
+    const resolvedRole = roles.includes("admin")
+      ? "admin"
+      : roles.includes("technicien")
+        ? "technicien"
+        : metadataRole === "admin"
+          ? "admin"
+          : metadataRole === "technicien"
+            ? "technicien"
+            : null;
+    setRole(resolvedRole);
+    setFullName(profile?.full_name || session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || profile?.email || session?.user?.email || "");
   };
 
   useEffect(() => {
