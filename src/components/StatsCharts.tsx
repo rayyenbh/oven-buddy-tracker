@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, PieChart, Pie, Cell,
@@ -42,6 +43,7 @@ function ChartCard({ title, subtitle, info, children, className, action }: {
   title: string; subtitle: string; info?: string;
   children: React.ReactNode; className?: string; action?: React.ReactNode;
 }) {
+  const [showInfo, setShowInfo] = useState(false);
   return (
     <div className={`rounded-xl border border-border bg-card p-5 ${className ?? ""}`}>
       <div className="mb-4 flex items-start justify-between gap-2">
@@ -53,6 +55,7 @@ function ChartCard({ title, subtitle, info, children, className, action }: {
                 type="button"
                 title={info}
                 aria-label={`Info: ${info}`}
+                onClick={() => setShowInfo(v => !v)}
                 className="text-muted-foreground/60 hover:text-foreground transition-colors"
               >
                 <Info className="h-3.5 w-3.5" />
@@ -60,6 +63,11 @@ function ChartCard({ title, subtitle, info, children, className, action }: {
             )}
           </div>
           <p className="text-xs text-muted-foreground">{subtitle}</p>
+          {showInfo && info && (
+            <div className="mt-2 rounded-lg border border-border/70 bg-secondary/40 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+              {info}
+            </div>
+          )}
         </div>
         {action}
       </div>

@@ -31,7 +31,7 @@ export function StartOperationDialog({
   onOpenChange: (b: boolean) => void;
 }) {
   const qc = useQueryClient();
-  const { fullName } = useAuth();
+  const { fullName, isAdmin } = useAuth();
 
   const [demandeur, setDemandeur] = useState("");
   const [realisateur, setRealisateur] = useState("");
@@ -49,13 +49,17 @@ export function StartOperationDialog({
   const [notes, setNotes] = useState("");
   const [cables, setCables] = useState<CableInput[]>([emptyCable()]);
 
-  // Pre-fill demandeur/réalisateur from connected user
+  // Lock the connected user's own field: admin => demandeur, opérateur => réalisateur.
+  // The other field is left for the user to fill in (or edit, for an admin's réalisateur default).
   useEffect(() => {
-    if (open && fullName) {
-      if (!demandeur) setDemandeur(fullName);
-      if (!realisateur) setRealisateur(fullName);
+    if (!open || !fullName) return;
+    if (isAdmin) {
+      setDemandeur(fullName);
+      setRealisateur((v) => v || fullName);
+    } else {
+      setRealisateur(fullName);
     }
-  }, [open, fullName, demandeur, realisateur]);
+  }, [open, fullName, isAdmin]);
 
   const computedEnd = useMemo(() => {
     if (endMode === "manuel") {
@@ -72,7 +76,7 @@ export function StartOperationDialog({
   }, [endMode, dateDebut, heureDebut, dureeHeures, dateFinManuel, heureFinManuel]);
 
   const reset = () => {
-    setDemandeur(fullName || "");
+    setDemandeur(isAdmin ? (fullName || "") : "");
     setRealisateur(fullName || ""); setProjet(""); setCdc(""); setEssai("");
     setSpecification(""); setTemperature("");
     setDateDebut(todayISO()); setHeureDebut(nowHM());
@@ -209,8 +213,8 @@ export function StartOperationDialog({
           {/* Intervenants */}
           <Section title="Intervenants" color="primary">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Field label="Demandeur" required value={demandeur} onChange={setDemandeur} placeholder="Nom du demandeur" />
-              <Field label="Réalisateur" required value={realisateur} onChange={setRealisateur} placeholder="Nom du réalisateur" readOnly />
+              <Field label="Demandeur" required value={demandeur} onChange={setDemandeur} placeholder="Nom du demandeur" readOnly={isAdmin} />
+              <Field label="Réalisateur" required value={realisateur} onChange={setRealisateur} placeholder="Nom du réalisateur" readOnly={!isAdmin} />
             </div>
           </Section>
 

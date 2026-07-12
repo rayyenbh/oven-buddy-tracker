@@ -1,12 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchHistory } from "@/lib/oven-queries";
 import { KindTabs, type KindFilter } from "@/lib/kind";
 import { exportCSV, exportPDF } from "@/lib/export";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Download, FileText, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, FileText, Trash2, X } from "lucide-react";
+import { toast } from "sonner";
 
 const PAGE_SIZE = 20;
 
@@ -36,6 +39,8 @@ export const Route = createFileRoute("/historique")({
 });
 
 function HistoryPage() {
+  const qc = useQueryClient();
+  const { isAdmin } = useAuth();
   const { data, isLoading } = useQuery({
     queryKey: ["history"],
     queryFn: fetchHistory,
@@ -121,6 +126,24 @@ function HistoryPage() {
     fn();
     setPage(1);
   }
+
+  const deleteOperationMut = useMutation({
+    mutationFn: async (operationId: string) => {
+      const { error: cableErr } = await supabase.from("operation_cables").delete().eq("operation_id", operationId);
+      if (cableErr) throw cableErr;
+      const { error: opErr } = await supabase.from("operations").delete().eq("id", operationId);
+      if (opErr) throw opErr;
+    },
+    onSuccess: () => {
+      toast.success("Opération supprimée");
+      qc.invalidateQueries({ queryKey: ["history"] });
+      qc.invalidateQueries({ queryKey: ["stats"] });
+      qc.invalidateQueries({ queryKey: ["ovens"] });
+    },
+    onError: (error: any) => {
+      toast.error(error?.message ?? "Impossible de supprimer cette opération");
+    },
+  });
 
   const exportFilename = `historique_${new Date().toISOString().slice(0, 10)}`;
 
@@ -401,6 +424,20 @@ function HistoryPage() {
                         >
                           <FileText className="h-3.5 w-3.5" /> PDF
                         </Button>
+                        {isAdmin && (
+                          <Button
+                            size="sm" variant="ghost"
+                            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                            title="Supprimer l'opération"
+                            disabled={deleteOperationMut.isPending}
+                            onClick={() => {
+                              if (!window.confirm("Supprimer définitivement cette opération et ses câbles associés ?")) return;
+                              deleteOperationMut.mutate(op.id);
+                            }}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>

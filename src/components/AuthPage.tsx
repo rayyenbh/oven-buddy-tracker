@@ -88,7 +88,7 @@ export function AuthPage() {
         </div>
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          Outil interne · Accès réservé aux techniciens et administrateurs
+          Outil interne · Accès réservé aux opérateurs et administrateurs
         </p>
       </div>
     </div>

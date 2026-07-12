@@ -4,6 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type AppRole = "admin" | "technicien";
 
+// Display label only — the underlying role value stays "technicien" in the database.
+export const ROLE_LABEL: Record<AppRole, string> = {
+  admin: "Admin",
+  technicien: "Opérateur",
+};
+
 type AuthCtx = {
   session: Session | null;
   user: User | null;

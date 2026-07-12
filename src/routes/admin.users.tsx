@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { useAuth, type AppRole } from "@/lib/auth";
+import { useAuth, ROLE_LABEL, type AppRole } from "@/lib/auth";
 import { ShieldCheck, Wrench, Plus, Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/admin/users")({
@@ -99,15 +99,22 @@ function UsersPage() {
 
   const deleteUserMut = useMutation({
     mutationFn: async (userId: string) => {
-      const [{ error: roleErr }, { error: profileErr }] = await Promise.all([
-        supabase.from("user_roles").delete().eq("user_id", userId),
-        supabase.from("profiles").delete().eq("id", userId),
-      ]);
+      const { error: roleErr } = await supabase.from("user_roles").delete().eq("user_id", userId);
       if (roleErr) throw roleErr;
+      const { data: deleted, error: profileErr } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("id", userId)
+        .select("id");
       if (profileErr) throw profileErr;
+      if (!deleted || deleted.length === 0) {
+        throw new Error(
+          "Suppression refusée par la base de données (permissions insuffisantes). Contactez un développeur pour vérifier la policy de suppression sur la table profiles.",
+        );
+      }
     },
     onSuccess: () => {
-      toast.success("Utilisateur retiré de la liste");
+      toast.success("Utilisateur supprimé");
       qc.invalidateQueries({ queryKey: ["admin-users"] });
     },
     onError: (e: any) => toast.error(e.message ?? "Erreur"),
@@ -121,7 +128,7 @@ function UsersPage() {
         <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Comptes</p>
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Gestion des utilisateurs</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Créez des comptes depuis cette page et attribuez le rôle <span className="font-medium text-warning">admin</span> ou <span className="font-medium text-primary">technicien</span>.
+          Créez des comptes depuis cette page et attribuez le rôle <span className="font-medium text-warning">admin</span> ou <span className="font-medium text-primary">opérateur</span>.
         </p>
       </div>
 
@@ -156,11 +163,11 @@ function UsersPage() {
                   key={role}
                   type="button"
                   onClick={() => setNewRole(role)}
-                  className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium capitalize transition-all ${
+                  className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
                     newRole === role ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {role}
+                  {ROLE_LABEL[role]}
                 </button>
               ))}
             </div>
@@ -174,6 +181,7 @@ function UsersPage() {
       </div>
 
       <div className="overflow-hidden rounded-xl border border-border bg-card">
+        <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border bg-secondary/50">
@@ -208,7 +216,7 @@ function UsersPage() {
                         role === "admin" ? "bg-warning/15 text-warning" : "bg-primary/15 text-primary"
                       }`}>
                         {role === "admin" ? <ShieldCheck className="h-3 w-3" /> : <Wrench className="h-3 w-3" />}
-                        {role}
+                        {ROLE_LABEL[role]}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right">
@@ -220,7 +228,7 @@ function UsersPage() {
                           onClick={() => setRoleMut.mutate({ userId: u.id, role: "technicien" })}
                           title={isMe && role === "admin" ? "Vous ne pouvez pas vous rétrograder vous-même" : ""}
                         >
-                          Technicien
+                          {ROLE_LABEL.technicien}
                         </Button>
                         <Button
                           size="sm" variant={role === "admin" ? "default" : "ghost"}
@@ -234,7 +242,10 @@ function UsersPage() {
                           size="sm" variant="ghost"
                           className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                           disabled={deleteUserMut.isPending || isMe}
-                          onClick={() => deleteUserMut.mutate(u.id)}
+                          onClick={() => {
+                            if (!window.confirm(`Supprimer définitivement ${u.full_name || u.email || "cet utilisateur"} ?`)) return;
+                            deleteUserMut.mutate(u.id);
+                          }}
                           title={isMe ? "Vous ne pouvez pas supprimer votre propre compte" : "Supprimer l'utilisateur"}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -247,10 +258,11 @@ function UsersPage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       <p className="mt-4 text-xs text-muted-foreground">
-        ⚠️ Les admins peuvent ajouter, modifier et supprimer les comptes depuis cette page. Les techniciens peuvent uniquement créer et suivre les opérations.
+        ⚠️ Les admins peuvent ajouter, modifier et supprimer les comptes depuis cette page. Les opérateurs peuvent uniquement créer et suivre les opérations.
       </p>
     </div>
   );

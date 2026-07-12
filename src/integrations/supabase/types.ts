@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          operation_id: string | null
+          oven_internal_number: string | null
+          read: boolean
+          read_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          operation_id?: string | null
+          oven_internal_number?: string | null
+          read?: boolean
+          read_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          operation_id?: string | null
+          oven_internal_number?: string | null
+          read?: boolean
+          read_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: false
+            referencedRelation: "operations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       operation_cables: {
         Row: {
           couleur: string | null

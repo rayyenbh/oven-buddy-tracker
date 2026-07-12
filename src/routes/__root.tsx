@@ -11,8 +11,9 @@ import {
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider, useTheme } from "@/lib/theme";
 import { useOfflineSync } from "@/hooks/useOfflineSync";
-import { AuthProvider, useAuth } from "@/lib/auth";
+import { AuthProvider, useAuth, ROLE_LABEL } from "@/lib/auth";
 import { AuthPage } from "@/components/AuthPage";
+import { NotificationBell } from "@/components/NotificationBell";
 import { LogOut } from "lucide-react";
 
 import appCss from "../styles.css?url";
@@ -169,12 +170,13 @@ function Header() {
               }/>
             </>
           )}
+          {isAdmin && <NotificationBell />}
           {user && (
             <div className="ml-2 flex items-center gap-2 pl-2 border-l border-border/50">
               <div className="hidden sm:block text-right">
                 <div className="text-xs font-semibold text-foreground leading-tight truncate max-w-[120px]">{fullName || user.email}</div>
                 <div className={`text-[10px] uppercase tracking-wider font-medium ${isAdmin ? "text-warning" : "text-primary"}`}>
-                  {role ?? "…"}
+                  {role ? ROLE_LABEL[role] : "…"}
                 </div>
               </div>
               <button

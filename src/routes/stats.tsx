@@ -152,10 +152,17 @@ function StatsPage() {
       e.ops++;
       e.heures += durationHours(o);
     });
-    return Array.from(map.values())
-      .sort((a, b) => b.ops - a.ops)
+
+    const entries = Array.from(map.values())
+      .sort((a, b) => b.heures - a.heures)
       .slice(0, 15)
       .map(d => ({ ...d, heures: Math.round(d.heures * 10) / 10 }));
+
+    const totalHours = entries.reduce((acc, item) => acc + item.heures, 0);
+    return entries.map(item => ({
+      ...item,
+      chargePercent: totalHours > 0 ? Math.round((item.heures / totalHours) * 100) : 0,
+    }));
   }, [filtered]);
 
 
@@ -332,7 +339,6 @@ function StatsPage() {
                   <td colSpan={6} className="px-3 py-8 text-center text-sm text-muted-foreground">Aucune donnée</td>
                 </tr>
               ) : (() => {
-                const maxOps = perOvenData[0]?.ops ?? 1;
                 return perOvenData.map((row, i) => (
                   <tr key={row.label} className={`border-b border-border/30 hover:bg-secondary/20 transition-colors ${i % 2 !== 0 ? "bg-secondary/10" : ""}`}>
                     <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{i + 1}</td>
@@ -348,14 +354,14 @@ function StatsPage() {
                           <div
                             className="absolute inset-y-0 left-0 rounded-full"
                             style={{
-                              width: `${Math.round((row.ops / maxOps) * 100)}%`,
+                              width: `${row.chargePercent}%`,
                               background: CHART_COLORS[i % CHART_COLORS.length],
                               opacity: 0.85,
                             }}
                           />
                         </div>
                         <span className="text-[10px] font-mono text-muted-foreground w-8">
-                          {Math.round((row.ops / maxOps) * 100)}%
+                          {row.chargePercent}%
                         </span>
                       </div>
                     </td>
@@ -377,6 +383,7 @@ function KpiCard({ label, value, sub, accent, icon, info, children }: {
   accent: "primary" | "success" | "warning" | "busy"; icon: React.ReactNode;
   info?: string; children?: React.ReactNode;
 }) {
+  const [showInfo, setShowInfo] = useState(false);
   const cls = {
     primary: { val: "text-primary", bg: "bg-primary/10 text-primary" },
     success: { val: "text-success", bg: "bg-success/10 text-success" },
@@ -394,6 +401,7 @@ function KpiCard({ label, value, sub, accent, icon, info, children }: {
                 type="button"
                 title={info}
                 aria-label={`Info: ${info}`}
+                onClick={() => setShowInfo(v => !v)}
                 className="text-muted-foreground/60 hover:text-foreground transition-colors"
               >
                 <Info className="h-3.5 w-3.5" />
@@ -405,6 +413,11 @@ function KpiCard({ label, value, sub, accent, icon, info, children }: {
         </div>
         <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${cls.bg}`}>{icon}</div>
       </div>
+      {showInfo && info && (
+        <div className="rounded-lg border border-border/70 bg-secondary/40 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+          {info}
+        </div>
+      )}
       {children}
     </div>
   );

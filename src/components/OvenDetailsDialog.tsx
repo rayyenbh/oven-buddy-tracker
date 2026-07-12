@@ -55,6 +55,12 @@ export function OvenDetailsDialog({
         })
         .eq("id", oven.active.id);
       if (error) throw error;
+      const { error: notifErr } = await supabase.from("notifications").insert({
+        operation_id: oven.active.id,
+        oven_internal_number: oven.internal_number,
+        message: `Opération terminée sur ${oven.internal_number} — Réalisateur : ${oven.active.realisateur}, Demandeur : ${oven.active.demandeur}`,
+      });
+      if (notifErr) console.error("Notification insert failed", notifErr);
     },
     onSuccess: () => {
       toast.success("Opération terminée — étuve libérée");
